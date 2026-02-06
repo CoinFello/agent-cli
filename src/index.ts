@@ -11,6 +11,7 @@ import {
   getTransactionStatus,
 } from "./api.js";
 import { type Hex, parseUnits } from "viem";
+import { generatePrivateKey } from "viem/accounts";
 import type { Delegation } from "@metamask/smart-accounts-kit";
 
 const program = new Command();
@@ -27,22 +28,12 @@ program
   .argument("<chain>", "Chain name (e.g. sepolia, mainnet, polygon, arbitrum)")
   .action(async (chain: string) => {
     try {
-      const privateKey = process.env.PRIVATE_KEY;
-      if (!privateKey) {
-        console.error("Error: PRIVATE_KEY environment variable is not set.");
-        console.error("Usage: PRIVATE_KEY=0x... openclaw create_account <chain>");
-        process.exit(1);
-      }
-
-      if (!privateKey.startsWith("0x")) {
-        console.error("Error: PRIVATE_KEY must start with '0x'.");
-        process.exit(1);
-      }
-
       console.log(`Creating smart account on ${chain}...`);
-      const { address } = await createSmartAccount(privateKey as Hex, chain);
+      const privateKey = generatePrivateKey();
+      const { address } = await createSmartAccount(privateKey, chain);
 
       const config = await loadConfig();
+      config.private_key = privateKey;
       config.smart_account_address = address;
       config.chain = chain;
       await saveConfig(config);
@@ -52,6 +43,27 @@ program
       console.log(`Config saved to: ${CONFIG_PATH}`);
     } catch (err) {
       console.error(`Failed to create account: ${(err as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+// ── get_account ─────────────────────────────────────────────────
+program
+  .command("get_account")
+  .description("Display the current smart account address from local config")
+  .action(async () => {
+    try {
+      const config = await loadConfig();
+      if (!config.smart_account_address) {
+        console.error(
+          "Error: No smart account found. Run 'create_account' first."
+        );
+        process.exit(1);
+      }
+
+      console.log(config.smart_account_address);
+    } catch (err) {
+      console.error(`Failed to get account: ${(err as Error).message}`);
       process.exit(1);
     }
   });
@@ -89,7 +101,7 @@ program
     "ERC-20 token contract address for the subdelegation scope"
   )
   .requiredOption(
-    "--max-amount <amount>",
+    "--amount <amount>",
     "Maximum token amount (human-readable, e.g. '5')"
   )
   .option(
@@ -106,19 +118,19 @@ program
       prompt: string,
       opts: {
         tokenAddress: string;
-        maxAmount: string;
+        amount: string;
         decimals: string;
         useRedelegation?: boolean;
       }
     ) => {
       try {
-        const privateKey = process.env.PRIVATE_KEY;
-        if (!privateKey) {
-          console.error("Error: PRIVATE_KEY environment variable is not set.");
+        const config = await loadConfig();
+        if (!config.private_key) {
+          console.error(
+            "Error: No private key found in config. Run 'create_account' first."
+          );
           process.exit(1);
         }
-
-        const config = await loadConfig();
         if (!config.smart_account_address) {
           console.error(
             "Error: No smart account found. Run 'create_account' first."
@@ -145,13 +157,14 @@ program
         // 2. Rebuild smart account
         console.log("Loading smart account...");
         const smartAccount = await getSmartAccount(
-          privateKey as Hex,
+          config.private_key as Hex,
           config.chain
         );
 
         // 3. Create subdelegation locally
+        console.log("Parsing amount...");
+        const maxAmount = parseUnits(opts.amount, Number(opts.decimals));
         console.log("Creating subdelegation...");
-        const maxAmount = parseUnits(opts.maxAmount, Number(opts.decimals));
         const subdelegation = createSubdelegation({
           smartAccount,
           delegateAddress: delegateAddress as Hex,

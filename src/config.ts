@@ -4,6 +4,7 @@ import { join } from "node:path";
 import type { Delegation } from "@metamask/smart-accounts-kit";
 
 export interface Config {
+  private_key?: string;
   smart_account_address?: string;
   chain?: string;
   delegation?: Delegation;
