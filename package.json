@@ -1,5 +1,5 @@
 {
-  "name": "openclaw-cli",
+  "name": "@coinfello/agent-cli",
   "version": "1.0.0",
   "description": "",
   "type": "module",
