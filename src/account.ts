@@ -1,13 +1,15 @@
 import {
   Implementation,
   toMetaMaskSmartAccount,
+  createDelegation,
   type ToMetaMaskSmartAccountReturnType,
+  type Delegation,
 } from "@metamask/smart-accounts-kit";
 import { privateKeyToAccount } from "viem/accounts";
 import { createPublicClient, http, type Hex, type Chain } from "viem";
 import * as chains from "viem/chains";
 
-type HybridSmartAccount = ToMetaMaskSmartAccountReturnType<Implementation.Hybrid>;
+export type HybridSmartAccount = ToMetaMaskSmartAccountReturnType<Implementation.Hybrid>;
 
 export function resolveChain(chainName: string): Chain {
   const chain = (chains as Record<string, Chain | undefined>)[chainName];
@@ -50,4 +52,30 @@ export async function getSmartAccount(
 ): Promise<HybridSmartAccount> {
   const { smartAccount } = await createSmartAccount(privateKey, chainName);
   return smartAccount;
+}
+
+export function createSubdelegation({
+  smartAccount,
+  delegateAddress,
+  parentDelegation,
+  tokenAddress,
+  maxAmount,
+}: {
+  smartAccount: HybridSmartAccount;
+  delegateAddress: Hex;
+  parentDelegation?: Delegation;
+  tokenAddress: Hex;
+  maxAmount: bigint;
+}): Delegation {
+  return createDelegation({
+    scope: {
+      type: "erc20TransferAmount",
+      tokenAddress,
+      maxAmount,
+    },
+    to: delegateAddress,
+    from: smartAccount.address,
+    parentDelegation,
+    environment: smartAccount.environment,
+  });
 }

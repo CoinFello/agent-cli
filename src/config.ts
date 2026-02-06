@@ -1,11 +1,12 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import type { Delegation } from "@metamask/smart-accounts-kit";
 
 export interface Config {
   smart_account_address?: string;
   chain?: string;
-  delegation?: string;
+  delegation?: Delegation;
 }
 
 const CONFIG_DIR = join(homedir(), ".clawdbot", "skills", "coinfello");

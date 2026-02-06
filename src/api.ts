@@ -1,52 +1,35 @@
 const BASE_URL = "https://app.coinfello.com/api/v1";
 
-export async function getSubdelegation(
-  prompt: string,
-  smartAccountAddress: string,
-  delegation: string
-): Promise<Record<string, unknown>> {
-  const response = await fetch(`${BASE_URL}/subdelegation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      prompt,
-      smart_account_address: smartAccountAddress,
-      delegation,
-    }),
-  });
+export async function getCoinFelloAddress(): Promise<string> {
+  const response = await fetch(`${BASE_URL}/coinfello-address`);
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Subdelegation request failed (${response.status}): ${text}`);
+    throw new Error(`Failed to get CoinFello address (${response.status}): ${text}`);
   }
 
-  return response.json() as Promise<Record<string, unknown>>;
+  const data = (await response.json()) as { address: string };
+  return data.address;
 }
 
 export interface SendConversationParams {
   prompt: string;
-  subdelegation: unknown;
-  signature: string;
+  signedSubdelegation: unknown;
   smartAccountAddress: string;
-  delegation: string;
 }
 
 export async function sendConversation({
   prompt,
-  subdelegation,
-  signature,
+  signedSubdelegation,
   smartAccountAddress,
-  delegation,
 }: SendConversationParams): Promise<{ txn_id: string }> {
   const response = await fetch(`${BASE_URL}/conversation`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       prompt,
-      subdelegation,
-      signature,
+      signed_subdelegation: signedSubdelegation,
       smart_account_address: smartAccountAddress,
-      delegation,
     }),
   });
 

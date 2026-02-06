@@ -1,12 +1,17 @@
 import { Command } from "commander";
-import { createSmartAccount, getSmartAccount } from "./account.js";
+import {
+  createSmartAccount,
+  getSmartAccount,
+  createSubdelegation,
+} from "./account.js";
 import { loadConfig, saveConfig, CONFIG_PATH } from "./config.js";
 import {
-  getSubdelegation,
+  getCoinFelloAddress,
   sendConversation,
   getTransactionStatus,
 } from "./api.js";
-import type { Hex } from "viem";
+import { type Hex, parseUnits } from "viem";
+import type { Delegation } from "@metamask/smart-accounts-kit";
 
 const program = new Command();
 
@@ -54,10 +59,12 @@ program
 // ── set_delegation ──────────────────────────────────────────────
 program
   .command("set_delegation")
-  .description("Store a delegation string in local config")
-  .argument("<delegation>", "The delegation string to store")
-  .action(async (delegation: string) => {
+  .description("Store a signed delegation (JSON) in local config")
+  .argument("<delegation>", "The signed delegation as a JSON string")
+  .action(async (delegationJson: string) => {
     try {
+      const delegation = JSON.parse(delegationJson) as Delegation;
+
       const config = await loadConfig();
       config.delegation = delegation;
       await saveConfig(config);
@@ -74,74 +81,108 @@ program
 program
   .command("send_prompt")
   .description(
-    "Send a prompt to CoinFello, signing a subdelegation with your smart account"
+    "Send a prompt to CoinFello, creating and signing a subdelegation locally"
   )
   .argument("<prompt>", "The prompt to send")
-  .action(async (prompt: string) => {
-    try {
-      const privateKey = process.env.PRIVATE_KEY;
-      if (!privateKey) {
-        console.error("Error: PRIVATE_KEY environment variable is not set.");
-        process.exit(1);
+  .requiredOption(
+    "--token-address <address>",
+    "ERC-20 token contract address for the subdelegation scope"
+  )
+  .requiredOption(
+    "--max-amount <amount>",
+    "Maximum token amount (human-readable, e.g. '5')"
+  )
+  .option(
+    "--decimals <decimals>",
+    "Token decimals for parsing max-amount",
+    "18"
+  )
+  .option(
+    "--use-redelegation",
+    "Create a redelegation from a stored parent delegation"
+  )
+  .action(
+    async (
+      prompt: string,
+      opts: {
+        tokenAddress: string;
+        maxAmount: string;
+        decimals: string;
+        useRedelegation?: boolean;
       }
+    ) => {
+      try {
+        const privateKey = process.env.PRIVATE_KEY;
+        if (!privateKey) {
+          console.error("Error: PRIVATE_KEY environment variable is not set.");
+          process.exit(1);
+        }
 
-      const config = await loadConfig();
-      if (!config.smart_account_address) {
-        console.error(
-          "Error: No smart account found. Run 'create_account' first."
+        const config = await loadConfig();
+        if (!config.smart_account_address) {
+          console.error(
+            "Error: No smart account found. Run 'create_account' first."
+          );
+          process.exit(1);
+        }
+        if (!config.chain) {
+          console.error(
+            "Error: No chain found in config. Run 'create_account' first."
+          );
+          process.exit(1);
+        }
+        if (opts.useRedelegation && !config.delegation) {
+          console.error(
+            "Error: --use-redelegation requires a parent delegation. Run 'set_delegation' first."
+          );
+          process.exit(1);
+        }
+
+        // 1. Get CoinFello delegate address
+        console.log("Fetching CoinFello delegate address...");
+        const delegateAddress = await getCoinFelloAddress();
+
+        // 2. Rebuild smart account
+        console.log("Loading smart account...");
+        const smartAccount = await getSmartAccount(
+          privateKey as Hex,
+          config.chain
         );
+
+        // 3. Create subdelegation locally
+        console.log("Creating subdelegation...");
+        const maxAmount = parseUnits(opts.maxAmount, Number(opts.decimals));
+        const subdelegation = createSubdelegation({
+          smartAccount,
+          delegateAddress: delegateAddress as Hex,
+          parentDelegation: opts.useRedelegation ? config.delegation : undefined,
+          tokenAddress: opts.tokenAddress as Hex,
+          maxAmount,
+        });
+
+        // 4. Sign the subdelegation
+        console.log("Signing subdelegation...");
+        const signature = await smartAccount.signDelegation({
+          delegation: subdelegation,
+        });
+        const signedSubdelegation = { ...subdelegation, signature };
+
+        // 5. Send to conversation endpoint
+        console.log("Sending to conversation endpoint...");
+        const result = await sendConversation({
+          prompt,
+          signedSubdelegation,
+          smartAccountAddress: config.smart_account_address,
+        });
+
+        console.log("Transaction submitted successfully.");
+        console.log(`Transaction ID: ${result.txn_id}`);
+      } catch (err) {
+        console.error(`Failed to send prompt: ${(err as Error).message}`);
         process.exit(1);
       }
-      if (!config.delegation) {
-        console.error(
-          "Error: No delegation found. Run 'set_delegation' first."
-        );
-        process.exit(1);
-      }
-      if (!config.chain) {
-        console.error("Error: No chain found in config. Run 'create_account' first.");
-        process.exit(1);
-      }
-
-      // 1. Get subdelegation from API
-      console.log("Requesting subdelegation...");
-      const subdelegationResponse = await getSubdelegation(
-        prompt,
-        config.smart_account_address,
-        config.delegation
-      );
-
-      // 2. Sign the subdelegation with the smart account
-      console.log("Signing subdelegation...");
-      const smartAccount = await getSmartAccount(privateKey as Hex, config.chain);
-
-      const subdelegation =
-        (subdelegationResponse as Record<string, unknown>).subdelegation ??
-        subdelegationResponse;
-
-      const signature = await smartAccount.signDelegation({
-        delegation: subdelegation as Parameters<
-          typeof smartAccount.signDelegation
-        >[0]["delegation"],
-      });
-
-      // 3. Send signed subdelegation to conversation endpoint
-      console.log("Sending to conversation endpoint...");
-      const result = await sendConversation({
-        prompt,
-        subdelegation,
-        signature,
-        smartAccountAddress: config.smart_account_address,
-        delegation: config.delegation,
-      });
-
-      console.log("Transaction submitted successfully.");
-      console.log(`Transaction ID: ${result.txn_id}`);
-    } catch (err) {
-      console.error(`Failed to send prompt: ${(err as Error).message}`);
-      process.exit(1);
     }
-  });
+  );
 
 // ── get_transaction_status ──────────────────────────────────────
 program
@@ -153,7 +194,9 @@ program
       const result = await getTransactionStatus(txnId);
       console.log(JSON.stringify(result, null, 2));
     } catch (err) {
-      console.error(`Failed to get transaction status: ${(err as Error).message}`);
+      console.error(
+        `Failed to get transaction status: ${(err as Error).message}`
+      );
       process.exit(1);
     }
   });
