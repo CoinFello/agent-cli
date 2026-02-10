@@ -8,6 +8,7 @@ export interface Config {
   smart_account_address?: string;
   chain?: string;
   delegation?: Delegation;
+  session_token?: string;
 }
 
 const CONFIG_DIR = join(homedir(), ".clawdbot", "skills", "coinfello");

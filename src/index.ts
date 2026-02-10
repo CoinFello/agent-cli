@@ -10,6 +10,7 @@ import {
   sendConversation,
   getTransactionStatus,
 } from "./api.js";
+import { signInWithAgent } from "./siwe.js";
 import { type Hex, parseUnits } from "viem";
 import { generatePrivateKey } from "viem/accounts";
 import type { Delegation } from "@metamask/smart-accounts-kit";
@@ -64,6 +65,25 @@ program
       console.log(config.smart_account_address);
     } catch (err) {
       console.error(`Failed to get account: ${(err as Error).message}`);
+      process.exit(1);
+    }
+  });
+
+// ── sign_in ─────────────────────────────────────────────────────
+program
+  .command("sign_in")
+  .description("Sign in to a server using SIWE with your smart account")
+  .option("--base-url <baseUrl>", "The server base URL override (e.g. https://api.example.com)", "https://app.coinfello.com/api/auth")
+  .action(async (opts: {baseUrl: string}) => {
+    try {
+      console.log("Signing in with smart account...");
+      const config = await loadConfig();
+      const result = await signInWithAgent(opts.baseUrl, config);
+      console.log("Sign-in successful.");
+      console.log(`User ID: ${result.user.id}`);
+      console.log(`Session token saved to config.`);
+    } catch (err) {
+      console.error(`Failed to sign in: ${(err as Error).message}`);
       process.exit(1);
     }
   });

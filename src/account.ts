@@ -24,7 +24,7 @@ export function resolveChain(chainName: string): Chain {
 export async function createSmartAccount(
   privateKey: Hex,
   chainName: string
-): Promise<{ smartAccount: HybridSmartAccount; address: string }> {
+): Promise<{ smartAccount: HybridSmartAccount; address: string; owner: any }> {
   const chain = resolveChain(chainName);
 
   const publicClient = createPublicClient({
@@ -39,11 +39,11 @@ export async function createSmartAccount(
     implementation: Implementation.Hybrid,
     deployParams: [owner.address, [], [], []],
     deploySalt: "0x",
-    signer: { account: owner },
+    signer: { account: owner }
   });
 
   const address = await smartAccount.getAddress();
-  return { smartAccount, address };
+  return { smartAccount, address, owner };
 }
 
 export async function getSmartAccount(
