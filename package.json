@@ -23,7 +23,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "UNLICENSED",
   "packageManager": "pnpm@10.24.0",
   "dependencies": {
     "@metamask/smart-accounts-kit": "0.4.0-beta.1",
