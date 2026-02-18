@@ -24,8 +24,8 @@ export function resolveChain(chainName: string): Chain {
 }
 
 export function resolveChainById(chainId: number): Chain {
-  const chain = Object.values(chains).find(
-    (c): c is Chain => typeof c === 'object' && c !== null && 'id' in c && c.id === chainId
+  const chain = Object.values(chains as Record<string, Chain>).find(
+    (c) => typeof c === 'object' && c !== null && 'id' in c && c.id === chainId
   )
   if (!chain) {
     throw new Error(`Unknown chain ID ${chainId}. No viem chain found with that ID.`)
