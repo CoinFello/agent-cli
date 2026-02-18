@@ -20,6 +20,7 @@ export interface ToolCall {
 }
 
 export interface ConversationResponse {
+  responseText?: string;
   txn_id?: string;
   toolCalls?: ToolCall[];
 }
@@ -38,6 +39,7 @@ export async function sendConversation({
   const body: Record<string, unknown> = {
     prompt,
     smart_account_address: smartAccountAddress,
+    stream: false
   };
   if (signedSubdelegation !== undefined) {
     body.signed_subdelegation = signedSubdelegation;

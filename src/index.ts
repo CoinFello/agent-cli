@@ -162,6 +162,12 @@ program
           smartAccountAddress: config.smart_account_address,
         });
 
+        // Read-only response: no tool calls and no transaction
+        if (!initialResponse.toolCalls?.length && !initialResponse.txn_id) {
+          console.log(initialResponse.responseText ?? "");
+          return;
+        }
+
         // If we got a direct txn_id with no tool calls, we're done
         if (initialResponse.txn_id && !initialResponse.toolCalls?.length) {
           console.log("Transaction submitted successfully.");
