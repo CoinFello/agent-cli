@@ -11,7 +11,8 @@ import {
   getTransactionStatus,
 } from "./api.js";
 import { signInWithAgent } from "./siwe.js";
-import { type Hex, parseUnits } from "viem";
+import { parseScope, type RawScope } from "./scope.js";
+import type { Hex } from "viem";
 import { generatePrivateKey } from "viem/accounts";
 import type { Delegation } from "@metamask/smart-accounts-kit";
 
@@ -113,22 +114,9 @@ program
 program
   .command("send_prompt")
   .description(
-    "Send a prompt to CoinFello, creating and signing a subdelegation locally"
+    "Send a prompt to CoinFello, creating a delegation if requested by the server"
   )
   .argument("<prompt>", "The prompt to send")
-  .requiredOption(
-    "--token-address <address>",
-    "ERC-20 token contract address for the subdelegation scope"
-  )
-  .requiredOption(
-    "--amount <amount>",
-    "Maximum token amount (human-readable, e.g. '5')"
-  )
-  .option(
-    "--decimals <decimals>",
-    "Token decimals for parsing max-amount",
-    "18"
-  )
   .option(
     "--use-redelegation",
     "Create a redelegation from a stored parent delegation"
@@ -137,9 +125,6 @@ program
     async (
       prompt: string,
       opts: {
-        tokenAddress: string;
-        amount: string;
-        decimals: string;
         useRedelegation?: boolean;
       }
     ) => {
@@ -170,46 +155,79 @@ program
           process.exit(1);
         }
 
-        // 1. Get CoinFello delegate address
+        // 1. Send prompt-only to conversation endpoint
+        console.log("Sending prompt...");
+        const initialResponse = await sendConversation({
+          prompt,
+          smartAccountAddress: config.smart_account_address,
+        });
+
+        // If we got a direct txn_id with no tool calls, we're done
+        if (initialResponse.txn_id && !initialResponse.toolCalls?.length) {
+          console.log("Transaction submitted successfully.");
+          console.log(`Transaction ID: ${initialResponse.txn_id}`);
+          return;
+        }
+
+        // 2. Look for ask_for_delegation tool call
+        const delegationToolCall = initialResponse.toolCalls?.find(
+          (tc) => tc.name === "ask_for_delegation"
+        );
+        if (!delegationToolCall) {
+          console.error("Error: No delegation request received from the server.");
+          console.log("Response:", JSON.stringify(initialResponse, null, 2));
+          process.exit(1);
+        }
+
+        // 3. Parse tool call arguments
+        const args = JSON.parse(delegationToolCall.arguments) as {
+          chainId: number;
+          scope: RawScope;
+        };
+        console.log(`Delegation requested: scope=${args.scope.type}, chainId=${args.chainId}`);
+
+        // 4. Get CoinFello delegate address
         console.log("Fetching CoinFello delegate address...");
         const delegateAddress = await getCoinFelloAddress();
 
-        // 2. Rebuild smart account
+        // 5. Rebuild smart account using chainId from tool call
         console.log("Loading smart account...");
         const smartAccount = await getSmartAccount(
           config.private_key as Hex,
-          config.chain
+          args.chainId
         );
 
-        // 3. Create subdelegation locally
-        console.log("Parsing amount...");
-        const maxAmount = parseUnits(opts.amount, Number(opts.decimals));
+        // 6. Parse scope and create subdelegation
+        const scope = parseScope(args.scope);
         console.log("Creating subdelegation...");
         const subdelegation = createSubdelegation({
           smartAccount,
           delegateAddress: delegateAddress as Hex,
           parentDelegation: opts.useRedelegation ? config.delegation : undefined,
-          tokenAddress: opts.tokenAddress as Hex,
-          maxAmount,
+          scope,
         });
 
-        // 4. Sign the subdelegation
+        // 7. Sign the subdelegation
         console.log("Signing subdelegation...");
         const signature = await smartAccount.signDelegation({
           delegation: subdelegation,
         });
         const signedSubdelegation = { ...subdelegation, signature };
 
-        // 5. Send to conversation endpoint
-        console.log("Sending to conversation endpoint...");
-        const result = await sendConversation({
+        // 8. Send signed delegation back to conversation endpoint
+        console.log("Sending signed delegation...");
+        const finalResponse = await sendConversation({
           prompt,
           signedSubdelegation,
           smartAccountAddress: config.smart_account_address,
         });
 
-        console.log("Transaction submitted successfully.");
-        console.log(`Transaction ID: ${result.txn_id}`);
+        if (finalResponse.txn_id) {
+          console.log("Transaction submitted successfully.");
+          console.log(`Transaction ID: ${finalResponse.txn_id}`);
+        } else {
+          console.log("Response:", JSON.stringify(finalResponse, null, 2));
+        }
       } catch (err) {
         console.error(`Failed to send prompt: ${(err as Error).message}`);
         process.exit(1);

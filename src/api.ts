@@ -12,25 +12,41 @@ export async function getCoinFelloAddress(): Promise<string> {
   return data.address;
 }
 
+export interface ToolCall {
+  type: "function_call";
+  arguments: string;
+  name: string;
+  callId: string;
+}
+
+export interface ConversationResponse {
+  txn_id?: string;
+  toolCalls?: ToolCall[];
+}
+
 export interface SendConversationParams {
   prompt: string;
-  signedSubdelegation: unknown;
   smartAccountAddress: string;
+  signedSubdelegation?: unknown;
 }
 
 export async function sendConversation({
   prompt,
   signedSubdelegation,
   smartAccountAddress,
-}: SendConversationParams): Promise<{ txn_id: string }> {
+}: SendConversationParams): Promise<ConversationResponse> {
+  const body: Record<string, unknown> = {
+    prompt,
+    smart_account_address: smartAccountAddress,
+  };
+  if (signedSubdelegation !== undefined) {
+    body.signed_subdelegation = signedSubdelegation;
+  }
+
   const response = await fetch(`${BASE_URL}/conversation`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      prompt,
-      signed_subdelegation: signedSubdelegation,
-      smart_account_address: smartAccountAddress,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -38,7 +54,7 @@ export async function sendConversation({
     throw new Error(`Conversation request failed (${response.status}): ${text}`);
   }
 
-  return response.json() as Promise<{ txn_id: string }>;
+  return response.json() as Promise<ConversationResponse>;
 }
 
 export async function getTransactionStatus(
