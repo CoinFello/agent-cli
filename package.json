@@ -1,6 +1,6 @@
 {
   "name": "@coinfello/agent-cli",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "type": "module",
   "main": "dist/index.js",
@@ -19,7 +19,8 @@
     "lint": "eslint src",
     "prettier-fix": "prettier --write src coinfello",
     "prettier": "prettier --check src coinfello",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:e2e": "vitest run tests/e2e"
   },
   "keywords": [],
   "author": "",
@@ -28,6 +29,7 @@
   "dependencies": {
     "@metamask/smart-accounts-kit": "0.4.0-beta.1",
     "commander": "^14.0.3",
+    "tough-cookie": "^6.0.0",
     "viem": "^2.45.1"
   },
   "devDependencies": {
@@ -37,6 +39,7 @@
     "prettier": "^3.8.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.0",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18"
   }
 }

@@ -1,6 +1,6 @@
 ---
 name: coinfello
-description: 'Interact with CoinFello using the openclaw CLI to create MetaMask smart accounts, manage delegations, send prompts with ERC-20 token subdelegations, and check transaction status. Use when the user wants to send crypto transactions via natural language prompts, manage smart account delegations, or check CoinFello transaction results.'
+description: 'Interact with CoinFello using the openclaw CLI to create MetaMask smart accounts, sign in with SIWE, manage delegations, send prompts with server-driven ERC-20 token subdelegations, and check transaction status. Use when the user wants to send crypto transactions via natural language prompts, manage smart account delegations, or check CoinFello transaction results.'
 compatibility: Requires Node.js 20+ and pnpm.
 metadata:
   {
@@ -11,7 +11,7 @@ metadata:
 
 # CoinFello CLI Skill
 
-Use the `openclaw` CLI to interact with CoinFello through MetaMask Smart Accounts. The CLI handles smart account creation, delegation management, prompt-based ERC-20 token transactions, and transaction status checks.
+Use the `openclaw` CLI to interact with CoinFello through MetaMask Smart Accounts. The CLI handles smart account creation, SIWE authentication, delegation management, prompt-based transactions, and transaction status checks.
 
 ## Prerequisites
 
@@ -27,13 +27,13 @@ The CLI binary is available at `./dist/index.js` after building, or as `openclaw
 # 1. Create a smart account on a chain (generates a new private key automatically)
 openclaw create_account sepolia
 
-# 2. Send a prompt with token subdelegation
-openclaw send_prompt "swap 5 USDC for ETH" \
-  --token-address 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 \
-  --amount 5 \
-  --decimals 6
+# 2. Sign in to CoinFello with your smart account (SIWE)
+openclaw sign_in
 
-# 3. Check transaction status
+# 3. Send a natural language prompt — the server will request a delegation if needed
+openclaw send_prompt "send 5 USDC to 0xRecipient..."
+
+# 4. Check transaction status
 openclaw get_transaction_status <txn_id>
 ```
 
@@ -63,6 +63,20 @@ openclaw get_account
 - Prints the stored `smart_account_address`
 - Exits with an error if no account has been created yet
 
+### sign_in
+
+Authenticates with CoinFello using Sign-In with Ethereum (SIWE) and your smart account. Saves the session token to local config.
+
+```bash
+openclaw sign_in [--base-url <url>]
+```
+
+- `--base-url <url>` — Auth server base URL (default: `https://app.coinfello.com/api/auth`)
+- Signs in using the private key stored in config
+- Saves the session token to `~/.clawdbot/skills/coinfello/config.json`
+- The session token is loaded automatically for subsequent `send_prompt` calls
+- Must be run after `create_account` and before `send_prompt` for authenticated flows
+
 ### set_delegation
 
 Stores a signed parent delegation (JSON) in local config for use with redelegation flows.
@@ -76,34 +90,28 @@ openclaw set_delegation '<delegation-json>'
 
 ### send_prompt
 
-Sends a natural language prompt to CoinFello with a locally-created and signed ERC-20 token subdelegation.
+Sends a natural language prompt to CoinFello. If the server requires a delegation to execute the action, the CLI creates and signs a subdelegation automatically based on the server's requested scope and chain.
 
 ```bash
-openclaw send_prompt "<prompt>" \
-  --token-address <erc20-address> \
-  --amount <amount> \
-  [--decimals <n>] \
-  [--use-redelegation]
+openclaw send_prompt "<prompt>" [--use-redelegation]
 ```
-
-**Required options:**
-
-- `--token-address <address>` — ERC-20 token contract address for the subdelegation scope
-- `--amount <amount>` — Maximum token amount in human-readable form (e.g. `5`, `100.5`)
 
 **Optional:**
 
-- `--decimals <n>` — Token decimals for parsing `--amount` (default: `18`)
-- `--use-redelegation` — Create a redelegation from a stored parent delegation (requires `set_delegation` first)
+- `--use-redelegation` — Create a redelegation from a stored parent delegation instead of a fresh subdelegation (requires `set_delegation` first)
 
 **What happens internally:**
 
-1. Fetches CoinFello's delegate address from the API
-2. Rebuilds the smart account from the stored private key and chain in config
-3. Creates a subdelegation scoped to `erc20TransferAmount` with the specified token and max amount
-4. Signs the subdelegation with the smart account
-5. Sends the prompt + signed subdelegation to CoinFello's conversation endpoint
-6. Returns a `txn_id` for tracking
+1. Sends the prompt to CoinFello's conversation endpoint
+2. If the server returns a read-only response (no transaction needed) → prints the response text and exits
+3. If the server returns a `txn_id` directly → prints it and exits
+4. If the server sends an `ask_for_delegation` tool call with a `chainId` and `scope`:
+   - Fetches CoinFello's delegate address
+   - Rebuilds the smart account using the chain ID from the tool call
+   - Parses the server-provided scope (supports ERC-20, native token, ERC-721, and function call scopes)
+   - Creates and signs a subdelegation
+   - Sends the signed delegation back to the conversation endpoint
+   - Returns a `txn_id` for tracking
 
 ### get_transaction_status
 
@@ -117,20 +125,28 @@ openclaw get_transaction_status <txn_id>
 
 ## Common Workflows
 
-### Basic: Send a Token Transfer Prompt
+### Basic: Send a Prompt (Server-Driven Delegation)
 
 ```bash
 # Create account if not already done
 openclaw create_account sepolia
 
-# Send prompt to transfer up to 10 USDC
-openclaw send_prompt "send 5 USDC to 0xRecipient..." \
-  --token-address 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 \
-  --amount 10 \
-  --decimals 6
+# Sign in (required for delegation flows)
+openclaw sign_in
+
+# Send a natural language prompt — delegation is handled automatically
+openclaw send_prompt "send 5 USDC to 0xRecipient..."
 
 # Check the result
 openclaw get_transaction_status <txn_id-from-above>
+```
+
+### Read-Only Prompt
+
+Some prompts don't require a transaction. The CLI detects this automatically and just prints the response.
+
+```bash
+openclaw send_prompt "what is the chain ID for Base?"
 ```
 
 ### With Redelegation
@@ -142,20 +158,19 @@ Use this when you have a parent delegation from another delegator and want to cr
 openclaw set_delegation '{"delegate":"0x...","delegator":"0x...","authority":"0x...","caveats":[],"salt":"0x...","signature":"0x..."}'
 
 # Send with redelegation
-openclaw send_prompt "swap tokens" \
-  --token-address 0xTokenAddress \
-  --amount 100 \
-  --use-redelegation
+openclaw send_prompt "swap tokens" --use-redelegation
 ```
 
 ## Edge Cases
 
 - **No smart account**: Run `create_account` before `send_prompt`. The CLI checks for a saved private key and address in config.
+- **Not signed in**: Run `sign_in` before `send_prompt` if the server requires authentication.
 - **Invalid chain name**: The CLI throws an error listing valid viem chain names.
 - **Missing parent delegation with --use-redelegation**: The CLI exits with an error. Run `set_delegation` first.
+- **Read-only response**: If the server returns a text response with no transaction, the CLI prints it and exits without creating a delegation.
 
 ## Reference
 
-See [references/REFERENCE.md](references/REFERENCE.md) for the full config schema, supported chains, API details, and troubleshooting.
+See [references/REFERENCE.md](references/REFERENCE.md) for the full config schema, supported chains, API details, scope types, and troubleshooting.
 
 See [scripts/setup-and-send.sh](scripts/setup-and-send.sh) for an end-to-end automation script.
