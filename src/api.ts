@@ -12,6 +12,20 @@ export async function getCoinFelloAddress(): Promise<string> {
   return data.address;
 }
 
+export interface CoinFelloAgent {id: number, name: string}
+
+export async function getCoinFelloAgents(): Promise<CoinFelloAgent[]> {
+  const response = await fetch(`${BASE_URL}/coinfello-agents`);
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to get CoinFello address (${response.status}): ${text}`);
+  }
+
+  const data = (await response.json()) as { availableAgents: CoinFelloAgent[] };
+  return data.availableAgents;
+}
+
 export interface ToolCall {
   type: "function_call";
   arguments: string;
@@ -36,11 +50,15 @@ export async function sendConversation({
   signedSubdelegation,
   smartAccountAddress,
 }: SendConversationParams): Promise<ConversationResponse> {
+  const agents = await getCoinFelloAgents()
   const body: Record<string, unknown> = {
     prompt,
     smart_account_address: smartAccountAddress,
     stream: false
   };
+  if (agents.length){
+    body.agentId = agents[0].id
+  }
   if (signedSubdelegation !== undefined) {
     body.signed_subdelegation = signedSubdelegation;
   }
