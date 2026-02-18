@@ -29,6 +29,7 @@
   "dependencies": {
     "@metamask/smart-accounts-kit": "0.4.0-beta.1",
     "commander": "^14.0.3",
+    "tough-cookie": "^6.0.0",
     "viem": "^2.45.1"
   },
   "devDependencies": {

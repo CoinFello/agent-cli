@@ -1,7 +1,8 @@
 import { Command } from 'commander'
 import { createSmartAccount, getSmartAccount, createSubdelegation } from './account.js'
 import { loadConfig, saveConfig, CONFIG_PATH } from './config.js'
-import { getCoinFelloAddress, sendConversation, getTransactionStatus } from './api.js'
+import { getCoinFelloAddress, sendConversation, getTransactionStatus, BASE_URL_V1 } from './api.js'
+import { loadSessionToken } from './cookies.js'
 import { signInWithAgent } from './siwe.js'
 import { parseScope, type RawScope } from './scope.js'
 import type { Hex } from 'viem'
@@ -136,6 +137,11 @@ program
             "Error: --use-redelegation requires a parent delegation. Run 'set_delegation' first."
           )
           process.exit(1)
+        }
+
+        // Load persisted session token into cookie jar
+        if (config.session_token) {
+          await loadSessionToken(config.session_token, BASE_URL_V1)
         }
 
         // 1. Send prompt-only to conversation endpoint

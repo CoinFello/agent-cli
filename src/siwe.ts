@@ -2,6 +2,7 @@ import { createSiweMessage } from 'viem/siwe'
 import { type Hex, type Address } from 'viem'
 import { Config, saveConfig } from './config.js'
 import { createSmartAccount, resolveChain } from './account.js'
+import { fetchWithCookies } from './cookies.js'
 
 export interface SignInResult {
   token: string
@@ -36,7 +37,7 @@ export async function signInWithAgent(baseUrl: string, config: Config): Promise<
 
   // Fetch nonce from server
   console.log('fetching nonce...')
-  const nonceResponse = await fetch(`${baseUrl}/siwe/nonce`, {
+  const nonceResponse = await fetchWithCookies(`${baseUrl}/siwe/nonce`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ walletAddress, chainId }),
@@ -70,7 +71,7 @@ export async function signInWithAgent(baseUrl: string, config: Config): Promise<
 
   // Verify signature with server
   console.log('signing in with siwe message...')
-  const verifyResponse = await fetch(`${baseUrl}/siwe/verify`, {
+  const verifyResponse = await fetchWithCookies(`${baseUrl}/siwe/verify`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message, signature, walletAddress, chainId }),

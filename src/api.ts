@@ -1,7 +1,10 @@
-const BASE_URL = 'https://app.coinfello.com/api/v1'
+import { fetchWithCookies } from './cookies.js'
+
+export const BASE_URL = 'https://app.coinfello.com/'
+export const BASE_URL_V1 = BASE_URL + 'api/v1'
 
 export async function getCoinFelloAddress(): Promise<string> {
-  const response = await fetch(`${BASE_URL}/coinfello-address`)
+  const response = await fetchWithCookies(`${BASE_URL_V1}/automation/coinfello-address`)
 
   if (!response.ok) {
     const text = await response.text()
@@ -18,11 +21,12 @@ export interface CoinFelloAgent {
 }
 
 export async function getCoinFelloAgents(): Promise<CoinFelloAgent[]> {
-  const response = await fetch(`${BASE_URL}/coinfello-agents`)
+  const response = await fetchWithCookies(`${BASE_URL_V1}/automation/coinfello-agents`)
 
   if (!response.ok) {
     const text = await response.text()
-    throw new Error(`Failed to get CoinFello address (${response.status}): ${text}`)
+    console.error(`Error getting CoinFello agents ${text}`)
+    throw new Error(`Failed to get CoinFello agents (${response.status}): ${text}`)
   }
 
   const data = (await response.json()) as { availableAgents: CoinFelloAgent[] }
@@ -55,8 +59,7 @@ export async function sendConversation({
 }: SendConversationParams): Promise<ConversationResponse> {
   const agents = await getCoinFelloAgents()
   const body: Record<string, unknown> = {
-    prompt,
-    smart_account_address: smartAccountAddress,
+    inputMessage: prompt,
     stream: false,
   }
   if (agents.length) {
@@ -66,7 +69,7 @@ export async function sendConversation({
     body.signed_subdelegation = signedSubdelegation
   }
 
-  const response = await fetch(`${BASE_URL}/conversation`, {
+  const response = await fetchWithCookies(`${BASE_URL}/api/conversation`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -81,7 +84,9 @@ export async function sendConversation({
 }
 
 export async function getTransactionStatus(txnId: string): Promise<Record<string, unknown>> {
-  const response = await fetch(`${BASE_URL}/transaction_status?txn_id=${encodeURIComponent(txnId)}`)
+  const response = await fetchWithCookies(
+    `${BASE_URL_V1}/transaction_status?txn_id=${encodeURIComponent(txnId)}`
+  )
 
   if (!response.ok) {
     const text = await response.text()
