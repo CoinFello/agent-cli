@@ -1,0 +1,56 @@
+name: Publish @coinfello/agent-cli
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # enables npm provenance
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.24.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm codecheck
+
+      - name: Build
+        run: pnpm build
+
+      - name: Check if version is already published
+        id: version_check
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          PKG_NAME=$(node -p "require('./package.json').name")
+          echo "version=${PKG_VERSION}" >> $GITHUB_OUTPUT
+          if npm view "${PKG_NAME}@${PKG_VERSION}" version 2>/dev/null | grep -q "${PKG_VERSION}"; then
+            echo "already_published=true" >> $GITHUB_OUTPUT
+          else
+            echo "already_published=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish to npm
+        if: steps.version_check.outputs.already_published == 'false'
+        run: pnpm publish --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Skip publish (version already exists)
+        if: steps.version_check.outputs.already_published == 'true'
+        run: echo "Version ${{ steps.version_check.outputs.version }} already published. Skipping."
