@@ -6,7 +6,7 @@ import {
   type Delegation,
   type CreateDelegationOptions,
 } from '@metamask/smart-accounts-kit'
-import { privateKeyToAccount } from 'viem/accounts'
+import { PrivateKeyAccount, privateKeyToAccount } from 'viem/accounts'
 import { createPublicClient, http, type Hex, type Chain } from 'viem'
 import * as chains from 'viem/chains'
 
@@ -43,7 +43,7 @@ function resolveChainInput(chainInput: string | number): Chain {
 export async function createSmartAccount(
   privateKey: Hex,
   chainInput: string | number
-): Promise<{ smartAccount: HybridSmartAccount; address: string; owner: any }> {
+): Promise<{ smartAccount: HybridSmartAccount; address: string; owner: PrivateKeyAccount }> {
   const chain = resolveChainInput(chainInput)
 
   const publicClient = createPublicClient({

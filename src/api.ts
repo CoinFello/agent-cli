@@ -48,14 +48,12 @@ export interface ConversationResponse {
 
 export interface SendConversationParams {
   prompt: string
-  smartAccountAddress: string
   signedSubdelegation?: unknown
 }
 
 export async function sendConversation({
   prompt,
   signedSubdelegation,
-  smartAccountAddress,
 }: SendConversationParams): Promise<ConversationResponse> {
   const agents = await getCoinFelloAgents()
   const body: Record<string, unknown> = {

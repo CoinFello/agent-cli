@@ -148,7 +148,6 @@ program
         console.log('Sending prompt...')
         const initialResponse = await sendConversation({
           prompt,
-          smartAccountAddress: config.smart_account_address,
         })
 
         // Read-only response: no tool calls and no transaction
@@ -211,7 +210,6 @@ program
         const finalResponse = await sendConversation({
           prompt,
           signedSubdelegation,
-          smartAccountAddress: config.smart_account_address,
         })
 
         if (finalResponse.txn_id) {
