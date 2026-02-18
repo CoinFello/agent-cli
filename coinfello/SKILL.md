@@ -13,7 +13,7 @@ metadata: {
         "emoji": "👋",
         "homepage":"https://coinfello.com", 
         "requires": 
-        { "bins": ["curl", "jq"] }
+        { "bins": ["node"] }
     }
 }
 ---
