@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'coinfello/**'
+      - 'package.json'
   workflow_dispatch:
 
 jobs:
