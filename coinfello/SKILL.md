@@ -3,7 +3,10 @@ name: coinfello
 description: 'Interact with CoinFello using the openclaw CLI to create MetaMask smart accounts, manage delegations, send prompts with ERC-20 token subdelegations, and check transaction status. Use when the user wants to send crypto transactions via natural language prompts, manage smart account delegations, or check CoinFello transaction results.'
 compatibility: Requires Node.js 20+ and pnpm.
 metadata:
-  {'clawdbot':{ 'emoji': '👋', 'homepage': 'https://coinfello.com', 'requires': { 'bins': ['node'] } },}
+  {
+    'clawdbot':
+      { 'emoji': '👋', 'homepage': 'https://coinfello.com', 'requires': { 'bins': ['node'] } },
+  }
 ---
 
 # CoinFello CLI Skill
