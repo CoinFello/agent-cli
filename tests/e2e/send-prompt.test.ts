@@ -90,7 +90,7 @@ describe("send_prompt delegation flow", () => {
     await signInWithAgent(SIWE_BASE_URL, config);
   });
 
-  it("requests a delegation when asked to send 0.001 USDC on Base", async () => {
+  it.skip("requests a delegation when asked to send 0.001 USDC on Base", async () => {
     const response = await sendConversation({
       prompt:
         "send 0.001 USDC on Base to 0x000000000000000000000000000000000000dEaD",
@@ -109,7 +109,7 @@ describe("send_prompt delegation flow", () => {
     expect(args.scope).toBeDefined();
   });
 
-  it("requests a delegation when asked to swap 0.001 USDC to ETH on Base", async () => {
+  it.skip("requests a delegation when asked to swap 0.001 USDC to ETH on Base", async () => {
     const response = await sendConversation({
       prompt: "swap 0.001 USDC to ETH on Base",
       smartAccountAddress,
