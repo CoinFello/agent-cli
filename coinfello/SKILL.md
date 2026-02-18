@@ -1,21 +1,9 @@
 ---
 name: coinfello
-description: >-
-  Interact with CoinFello using the openclaw CLI to create MetaMask smart accounts,
-  manage delegations, send prompts with ERC-20 token subdelegations, and check
-  transaction status. Use when the user wants to send crypto transactions via
-  natural language prompts, manage smart account delegations, or check CoinFello
-  transaction results.
+description: 'Interact with CoinFello using the openclaw CLI to create MetaMask smart accounts, manage delegations, send prompts with ERC-20 token subdelegations, and check transaction status. Use when the user wants to send crypto transactions via natural language prompts, manage smart account delegations, or check CoinFello transaction results.'
 compatibility: Requires Node.js 20+ and pnpm.
-metadata: {
-    "openclaw":
-    {
-        "emoji": "👋",
-        "homepage":"https://coinfello.com", 
-        "requires": 
-        { "bins": ["node"] }
-    }
-}
+metadata:
+  {'clawdbot':{ 'emoji': '👋', 'homepage': 'https://coinfello.com', 'requires': { 'bins': ['node'] } },}
 ---
 
 # CoinFello CLI Skill
@@ -96,14 +84,17 @@ openclaw send_prompt "<prompt>" \
 ```
 
 **Required options:**
+
 - `--token-address <address>` — ERC-20 token contract address for the subdelegation scope
 - `--amount <amount>` — Maximum token amount in human-readable form (e.g. `5`, `100.5`)
 
 **Optional:**
+
 - `--decimals <n>` — Token decimals for parsing `--amount` (default: `18`)
 - `--use-redelegation` — Create a redelegation from a stored parent delegation (requires `set_delegation` first)
 
 **What happens internally:**
+
 1. Fetches CoinFello's delegate address from the API
 2. Rebuilds the smart account from the stored private key and chain in config
 3. Creates a subdelegation scoped to `erc20TransferAmount` with the specified token and max amount
