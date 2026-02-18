@@ -1,15 +1,21 @@
 {
   "name": "@coinfello/agent-cli",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
     "openclaw": "./dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "vite build",
-    "typecheck": "tsc --noEmit",
+    "codecheck": "tsc --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
