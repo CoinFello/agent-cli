@@ -34,9 +34,10 @@ jobs:
           fi
           echo "CHANGELOG=${CHANGELOG}" >> $GITHUB_ENV
 
+      - name: Login to ClawHub
+        run: clawhub login --token ${{ secrets.CLAWHUB_TOKEN }} --no-browser
+
       - name: Publish coinfello skill to ClawHub
-        env:
-          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
         run: |
           clawhub publish ./coinfello \
             --slug coinfello \
