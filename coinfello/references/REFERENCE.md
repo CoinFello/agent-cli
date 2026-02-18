@@ -11,6 +11,7 @@ Created automatically by `create_account`. Schema:
   "private_key": "0xabc123...def",
   "smart_account_address": "0x1234...abcd",
   "chain": "sepolia",
+  "session_token": "...",
   "delegation": {
     "delegate": "0x...",
     "delegator": "0x...",
@@ -22,12 +23,13 @@ Created automatically by `create_account`. Schema:
 }
 ```
 
-| Field                   | Type     | Set by           | Description                                 |
-| ----------------------- | -------- | ---------------- | ------------------------------------------- |
-| `private_key`           | `string` | `create_account` | Auto-generated hex private key              |
-| `smart_account_address` | `string` | `create_account` | Counterfactual address of the smart account |
-| `chain`                 | `string` | `create_account` | viem chain name used for account creation   |
-| `delegation`            | `object` | `set_delegation` | Optional parent delegation for redelegation |
+| Field                   | Type     | Set by           | Description                                    |
+| ----------------------- | -------- | ---------------- | ---------------------------------------------- |
+| `private_key`           | `string` | `create_account` | Auto-generated hex private key                 |
+| `smart_account_address` | `string` | `create_account` | Counterfactual address of the smart account    |
+| `chain`                 | `string` | `create_account` | viem chain name used for account creation      |
+| `session_token`         | `string` | `sign_in`        | SIWE session token for authenticated API calls |
+| `delegation`            | `object` | `set_delegation` | Optional parent delegation for redelegation    |
 
 ## Command Reference
 
@@ -51,6 +53,18 @@ openclaw get_account
 
 No parameters. Prints the stored smart account address from config. Exits with an error if no account has been created.
 
+### openclaw sign_in
+
+```
+openclaw sign_in [--base-url <url>]
+```
+
+| Parameter    | Type     | Required | Default                              | Description          |
+| ------------ | -------- | -------- | ------------------------------------ | -------------------- |
+| `--base-url` | `string` | No       | `https://app.coinfello.com/api/auth` | Auth server base URL |
+
+Performs a Sign-In with Ethereum (SIWE) flow using the private key from config. Saves the `session_token` to config on success. The session token is automatically injected as a cookie for subsequent API calls.
+
 ### openclaw set_delegation
 
 ```
@@ -64,18 +78,15 @@ openclaw set_delegation <delegation>
 ### openclaw send_prompt
 
 ```
-openclaw send_prompt <prompt> --token-address <addr> --amount <amt> [--decimals <n>] [--use-redelegation]
+openclaw send_prompt <prompt> [--use-redelegation]
 ```
 
-| Parameter            | Type      | Required | Default | Description                                   |
-| -------------------- | --------- | -------- | ------- | --------------------------------------------- |
-| `prompt`             | `string`  | Yes      | —       | Natural language prompt to send to CoinFello  |
-| `--token-address`    | `string`  | Yes      | —       | ERC-20 token contract address                 |
-| `--amount`           | `string`  | Yes      | —       | Max token amount (human-readable, e.g. `"5"`) |
-| `--decimals`         | `string`  | No       | `"18"`  | Token decimals for parsing amount             |
-| `--use-redelegation` | `boolean` | No       | `false` | Use stored parent delegation for redelegation |
+| Parameter            | Type      | Required | Default | Description                                                 |
+| -------------------- | --------- | -------- | ------- | ----------------------------------------------------------- |
+| `prompt`             | `string`  | Yes      | —       | Natural language prompt to send to CoinFello                |
+| `--use-redelegation` | `boolean` | No       | `false` | Use stored parent delegation to create a redelegation chain |
 
-Uses the private key and chain stored in config (from `create_account`).
+The server determines whether a delegation is needed and, if so, what scope and chain to use. The client creates and signs the subdelegation based on the server's `ask_for_delegation` tool call response.
 
 ### openclaw get_transaction_status
 
@@ -104,39 +115,104 @@ Any chain exported by `viem/chains`. Common examples:
 
 ## API Endpoints
 
-Base URL: `https://app.coinfello.com/api/v1`
+Base URL: `https://app.coinfello.com`
 
-| Endpoint                          | Method | Description                           |
-| --------------------------------- | ------ | ------------------------------------- |
-| `/coinfello-address`              | GET    | Returns CoinFello's delegate address  |
-| `/conversation`                   | POST   | Submits prompt + signed subdelegation |
-| `/transaction_status?txn_id=<id>` | GET    | Returns transaction status            |
+| Endpoint                                 | Method | Description                                       |
+| ---------------------------------------- | ------ | ------------------------------------------------- |
+| `/api/v1/automation/coinfello-address`   | GET    | Returns CoinFello's delegate address              |
+| `/api/v1/automation/coinfello-agents`    | GET    | Returns available CoinFello agents                |
+| `/api/conversation`                      | POST   | Submits prompt (and optionally signed delegation) |
+| `/api/v1/transaction_status?txn_id=<id>` | GET    | Returns transaction status                        |
 
-### POST /conversation body
+### POST /api/conversation body
+
+Initial request (prompt only):
 
 ```json
 {
-  "prompt": "swap 5 USDC for ETH",
-  "signed_subdelegation": { "...delegation object with signature..." },
-  "smart_account_address": "0x..."
+  "inputMessage": "send 5 USDC to 0xRecipient...",
+  "agentId": 1,
+  "stream": false
 }
 ```
 
+Follow-up request (with signed delegation):
+
+```json
+{
+  "inputMessage": "send 5 USDC to 0xRecipient...",
+  "agentId": 1,
+  "stream": false,
+  "signed_subdelegation": { "...delegation object with signature..." }
+}
+```
+
+### POST /api/conversation response
+
+Read-only response:
+
+```json
+{
+  "responseText": "The chain ID for Base is 8453."
+}
+```
+
+Delegation request (server asks client to sign):
+
+```json
+{
+  "toolCalls": [
+    {
+      "type": "function_call",
+      "name": "ask_for_delegation",
+      "callId": "...",
+      "arguments": "{\"chainId\": 8453, \"scope\": {\"type\": \"erc20TransferAmount\", \"tokenAddress\": \"0x...\", \"maxAmount\": \"5000000\"}}"
+    }
+  ]
+}
+```
+
+Final response (after delegation submitted):
+
+```json
+{
+  "txn_id": "abc123..."
+}
+```
+
+## Delegation Scope Types
+
+The server may request any of the following scope types via `ask_for_delegation`. The CLI parses and creates the appropriate delegation caveat automatically.
+
+| Scope Type                  | Fields                                                                       |
+| --------------------------- | ---------------------------------------------------------------------------- |
+| `erc20TransferAmount`       | `tokenAddress`, `maxAmount`                                                  |
+| `erc20PeriodTransfer`       | `tokenAddress`, `periodAmount`, `periodDuration`, `startDate`                |
+| `erc20Streaming`            | `tokenAddress`, `initialAmount`, `maxAmount`, `amountPerSecond`, `startTime` |
+| `nativeTokenTransferAmount` | `maxAmount`                                                                  |
+| `nativeTokenPeriodTransfer` | `periodAmount`, `periodDuration`, `startDate`                                |
+| `nativeTokenStreaming`      | `initialAmount`, `maxAmount`, `amountPerSecond`, `startTime`                 |
+| `erc721Transfer`            | `tokenAddress`, `tokenId`                                                    |
+| `functionCall`              | `targets`, `selectors`                                                       |
+
+All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC with 6 decimals).
+
 ## Common Token Decimals
 
-| Token | Decimals | Note                            |
-| ----- | -------- | ------------------------------- |
-| USDC  | 6        | Use `--decimals 6`              |
-| USDT  | 6        | Use `--decimals 6`              |
-| DAI   | 18       | Default, no `--decimals` needed |
-| WETH  | 18       | Default, no `--decimals` needed |
+| Token | Decimals | Note                          |
+| ----- | -------- | ----------------------------- |
+| USDC  | 6        | amounts use 6 decimal places  |
+| USDT  | 6        | amounts use 6 decimal places  |
+| DAI   | 18       | amounts use 18 decimal places |
+| WETH  | 18       | amounts use 18 decimal places |
 
 ## Error Messages
 
-| Error                                                                          | Cause                           | Fix                                    |
-| ------------------------------------------------------------------------------ | ------------------------------- | -------------------------------------- |
-| `Unknown chain "<name>"`                                                       | Invalid chain name              | Use a valid viem chain name            |
-| `No private key found in config. Run 'create_account' first.`                  | Missing private key in config   | Run `openclaw create_account <chain>`  |
-| `No smart account found. Run 'create_account' first.`                          | Missing smart account in config | Run `openclaw create_account <chain>`  |
-| `No chain found in config. Run 'create_account' first.`                        | Missing chain in config         | Run `openclaw create_account <chain>`  |
-| `--use-redelegation requires a parent delegation. Run 'set_delegation' first.` | No stored delegation            | Run `openclaw set_delegation '<json>'` |
+| Error                                                                          | Cause                               | Fix                                    |
+| ------------------------------------------------------------------------------ | ----------------------------------- | -------------------------------------- |
+| `Unknown chain "<name>"`                                                       | Invalid chain name                  | Use a valid viem chain name            |
+| `No private key found in config. Run 'create_account' first.`                  | Missing private key in config       | Run `openclaw create_account <chain>`  |
+| `No smart account found. Run 'create_account' first.`                          | Missing smart account in config     | Run `openclaw create_account <chain>`  |
+| `No chain found in config. Run 'create_account' first.`                        | Missing chain in config             | Run `openclaw create_account <chain>`  |
+| `--use-redelegation requires a parent delegation. Run 'set_delegation' first.` | No stored delegation                | Run `openclaw set_delegation '<json>'` |
+| `No delegation request received from the server.`                              | Server returned unexpected response | Check the full response JSON printed   |
