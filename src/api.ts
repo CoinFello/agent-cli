@@ -43,7 +43,7 @@ export interface ToolCall {
 export interface ConversationResponse {
   responseText?: string
   txn_id?: string
-  toolCalls?: ToolCall[]
+  clientToolCalls?: ToolCall[]
 }
 
 export interface SendConversationParams {

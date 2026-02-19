@@ -1,7 +1,13 @@
 import { Command } from 'commander'
 import { createSmartAccount, getSmartAccount, createSubdelegation } from './account.js'
 import { loadConfig, saveConfig, CONFIG_PATH } from './config.js'
-import { getCoinFelloAddress, sendConversation, getTransactionStatus, BASE_URL_V1 } from './api.js'
+import {
+  getCoinFelloAddress,
+  sendConversation,
+  getTransactionStatus,
+  BASE_URL_V1,
+  BASE_URL,
+} from './api.js'
 import { loadSessionToken } from './cookies.js'
 import { signInWithAgent } from './siwe.js'
 import { parseScope, type RawScope } from './scope.js'
@@ -68,7 +74,7 @@ program
   .option(
     '--base-url <baseUrl>',
     'The server base URL override (e.g. https://api.example.com)',
-    'https://app.coinfello.com/api/auth'
+    `${BASE_URL}api/auth`
   )
   .action(async (opts: { baseUrl: string }) => {
     try {
@@ -151,20 +157,20 @@ program
         })
 
         // Read-only response: no tool calls and no transaction
-        if (!initialResponse.toolCalls?.length && !initialResponse.txn_id) {
+        if (!initialResponse.clientToolCalls?.length && !initialResponse.txn_id) {
           console.log(initialResponse.responseText ?? '')
           return
         }
 
         // If we got a direct txn_id with no tool calls, we're done
-        if (initialResponse.txn_id && !initialResponse.toolCalls?.length) {
+        if (initialResponse.txn_id && !initialResponse.clientToolCalls?.length) {
           console.log('Transaction submitted successfully.')
           console.log(`Transaction ID: ${initialResponse.txn_id}`)
           return
         }
 
         // 2. Look for ask_for_delegation tool call
-        const delegationToolCall = initialResponse.toolCalls?.find(
+        const delegationToolCall = initialResponse.clientToolCalls?.find(
           (tc) => tc.name === 'ask_for_delegation'
         )
         if (!delegationToolCall) {
