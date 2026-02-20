@@ -13,15 +13,15 @@ CHAIN="${1:?Usage: $0 <chain> <prompt>}"
 PROMPT="${2:?Missing prompt}"
 
 echo "==> Creating smart account on ${CHAIN}..."
-openclaw create_account "$CHAIN"
+npx @coinfello/agent-cli create_account "$CHAIN"
 
 echo ""
 echo "==> Signing in..."
-openclaw sign_in
+npx @coinfello/agent-cli sign_in
 
 echo ""
 echo "==> Sending prompt..."
-OUTPUT=$(openclaw send_prompt "$PROMPT")
+OUTPUT=$(npx @coinfello/agent-cli send_prompt "$PROMPT")
 
 echo "$OUTPUT"
 
@@ -31,5 +31,5 @@ TXN_ID=$(echo "$OUTPUT" | grep -oP 'Transaction ID: \K.*')
 if [ -n "$TXN_ID" ]; then
   echo ""
   echo "==> Checking transaction status..."
-  openclaw get_transaction_status "$TXN_ID"
+  npx @coinfello/agent-cli get_transaction_status "$TXN_ID"
 fi

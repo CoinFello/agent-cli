@@ -33,10 +33,10 @@ Created automatically by `create_account`. Schema:
 
 ## Command Reference
 
-### openclaw create_account
+### npx @coinfello/agent-cli create_account
 
 ```
-openclaw create_account <chain>
+npx @coinfello/agent-cli create_account <chain>
 ```
 
 | Parameter | Type     | Required | Description                 |
@@ -45,18 +45,18 @@ openclaw create_account <chain>
 
 Generates a new private key automatically and saves it along with the smart account address and chain to config.
 
-### openclaw get_account
+### npx @coinfello/agent-cli get_account
 
 ```
-openclaw get_account
+npx @coinfello/agent-cli get_account
 ```
 
 No parameters. Prints the stored smart account address from config. Exits with an error if no account has been created.
 
-### openclaw sign_in
+### npx @coinfello/agent-cli sign_in
 
 ```
-openclaw sign_in [--base-url <url>]
+npx @coinfello/agent-cli sign_in [--base-url <url>]
 ```
 
 | Parameter    | Type     | Required | Default                         | Description          |
@@ -67,20 +67,20 @@ The default resolves using the `COINFELLO_BASE_URL` environment variable (defaul
 
 Performs a Sign-In with Ethereum (SIWE) flow using the private key from config. Saves the `session_token` to config on success. The session token is automatically injected as a cookie for subsequent API calls.
 
-### openclaw set_delegation
+### npx @coinfello/agent-cli set_delegation
 
 ```
-openclaw set_delegation <delegation>
+npx @coinfello/agent-cli set_delegation <delegation>
 ```
 
 | Parameter    | Type     | Required | Description                                                     |
 | ------------ | -------- | -------- | --------------------------------------------------------------- |
 | `delegation` | `string` | Yes      | JSON-encoded Delegation object from MetaMask Smart Accounts Kit |
 
-### openclaw send_prompt
+### npx @coinfello/agent-cli send_prompt
 
 ```
-openclaw send_prompt <prompt> [--use-redelegation]
+npx @coinfello/agent-cli send_prompt <prompt> [--use-redelegation]
 ```
 
 | Parameter            | Type      | Required | Default | Description                                                 |
@@ -92,10 +92,10 @@ The server determines whether a delegation is needed and, if so, what scope and 
 
 **ERC-6492 signature wrapping**: If the smart account has not yet been deployed on-chain, the CLI wraps the delegation signature using ERC-6492 (`serializeErc6492Signature`) with the account's factory address and factory data. This allows the delegation to be verified even before the account contract exists.
 
-### openclaw get_transaction_status
+### npx @coinfello/agent-cli get_transaction_status
 
 ```
-openclaw get_transaction_status <txn_id>
+npx @coinfello/agent-cli get_transaction_status <txn_id>
 ```
 
 | Parameter | Type     | Required | Description                     |
@@ -226,8 +226,8 @@ All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC 
 | Error                                                                          | Cause                               | Fix                                    |
 | ------------------------------------------------------------------------------ | ----------------------------------- | -------------------------------------- |
 | `Unknown chain "<name>"`                                                       | Invalid chain name                  | Use a valid viem chain name            |
-| `No private key found in config. Run 'create_account' first.`                  | Missing private key in config       | Run `openclaw create_account <chain>`  |
-| `No smart account found. Run 'create_account' first.`                          | Missing smart account in config     | Run `openclaw create_account <chain>`  |
-| `No chain found in config. Run 'create_account' first.`                        | Missing chain in config             | Run `openclaw create_account <chain>`  |
-| `--use-redelegation requires a parent delegation. Run 'set_delegation' first.` | No stored delegation                | Run `openclaw set_delegation '<json>'` |
+| `No private key found in config. Run 'create_account' first.`                  | Missing private key in config       | Run `npx @coinfello/agent-cli create_account <chain>`  |
+| `No smart account found. Run 'create_account' first.`                          | Missing smart account in config     | Run `npx @coinfello/agent-cli create_account <chain>`  |
+| `No chain found in config. Run 'create_account' first.`                        | Missing chain in config             | Run `npx @coinfello/agent-cli create_account <chain>`  |
+| `--use-redelegation requires a parent delegation. Run 'set_delegation' first.` | No stored delegation                | Run `npx @coinfello/agent-cli set_delegation '<json>'` |
 | `No delegation request received from the server.`                              | Server returned unexpected response | Check the full response JSON printed   |
