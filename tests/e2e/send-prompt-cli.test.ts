@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { describe, it, expect, beforeAll } from "vitest";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { type Hex, createWalletClient, http, parseEther } from "viem";
