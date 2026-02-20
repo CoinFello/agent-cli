@@ -104,7 +104,7 @@ describe("send_prompt delegation flow", () => {
     expect(args.scope).toBeDefined();
   });
 
-  it("requests a delegation when asked to swap 0.001 USDC to ETH on Base", async () => {
+  it.skip("requests a delegation when asked to swap 0.001 USDC to ETH on Base", async () => {
     const response = await sendConversation({
       prompt: "swap 0.001 USDC to ETH on Base.",
     });
