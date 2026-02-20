@@ -223,11 +223,11 @@ All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC 
 
 ## Error Messages
 
-| Error                                                                          | Cause                               | Fix                                    |
-| ------------------------------------------------------------------------------ | ----------------------------------- | -------------------------------------- |
-| `Unknown chain "<name>"`                                                       | Invalid chain name                  | Use a valid viem chain name            |
+| Error                                                                          | Cause                               | Fix                                                    |
+| ------------------------------------------------------------------------------ | ----------------------------------- | ------------------------------------------------------ |
+| `Unknown chain "<name>"`                                                       | Invalid chain name                  | Use a valid viem chain name                            |
 | `No private key found in config. Run 'create_account' first.`                  | Missing private key in config       | Run `npx @coinfello/agent-cli create_account <chain>`  |
 | `No smart account found. Run 'create_account' first.`                          | Missing smart account in config     | Run `npx @coinfello/agent-cli create_account <chain>`  |
 | `No chain found in config. Run 'create_account' first.`                        | Missing chain in config             | Run `npx @coinfello/agent-cli create_account <chain>`  |
 | `--use-redelegation requires a parent delegation. Run 'set_delegation' first.` | No stored delegation                | Run `npx @coinfello/agent-cli set_delegation '<json>'` |
-| `No delegation request received from the server.`                              | Server returned unexpected response | Check the full response JSON printed   |
+| `No delegation request received from the server.`                              | Server returned unexpected response | Check the full response JSON printed                   |

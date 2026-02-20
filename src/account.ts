@@ -91,6 +91,6 @@ export function createSubdelegation({
     from: smartAccount.address,
     parentDelegation,
     environment: smartAccount.environment,
-    salt: `0x${randomBytes(32).toString('hex')}` as Hex
+    salt: `0x${randomBytes(32).toString('hex')}` as Hex,
   })
 }
