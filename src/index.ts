@@ -15,7 +15,7 @@ import {
 } from './api.js'
 import { loadSessionToken } from './cookies.js'
 import { signInWithAgent } from './siwe.js'
-import { parseScope, type RawScope } from './scope.js'
+import { parseScope } from './scope.js'
 import { createPublicClient, http, serializeErc6492Signature, type Hex } from 'viem'
 import { generatePrivateKey } from 'viem/accounts'
 import type { Delegation } from '@metamask/smart-accounts-kit'
@@ -186,6 +186,7 @@ program
         }
 
         // 3. Parse tool call arguments
+        /* eslint-disable-next-line */
         const args = JSON.parse(delegationToolCall.arguments) as any
         console.log(`Delegation requested: scope=${args.scope.type}, chainId=${args.chainId}`)
 

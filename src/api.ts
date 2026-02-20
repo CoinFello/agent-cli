@@ -1,7 +1,7 @@
 import { fetchWithCookies } from './cookies.js'
 import { SignedSubdelegation } from './types.js'
 
-export const BASE_URL = process.env.COINFELLO_BASE_URL || 'http://localhost:3000/'
+export const BASE_URL = process.env.COINFELLO_BASE_URL || 'https://hyp3r-58q8qto10-hyperplay.vercel.app/'
 export const BASE_URL_V1 = BASE_URL + 'api/v1'
 
 export async function getCoinFelloAddress(): Promise<string> {
@@ -52,6 +52,7 @@ export interface SendConversationParams {
   prompt: string
   signedSubdelegation?: SignedSubdelegation
   chatId?: string | null
+  /* eslint-disable-next-line */
   delegationArguments?: any
   callId?: string
 }
@@ -88,7 +89,6 @@ export async function sendConversation({
     body.chatId = chatId
   }
 
-  console.log('sending body ', body, ' to ', BASE_URL)
   const response = await fetchWithCookies(`${BASE_URL}api/conversation`, {
     method: 'POST',
     body: JSON.stringify(body),
