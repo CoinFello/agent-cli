@@ -59,9 +59,11 @@ No parameters. Prints the stored smart account address from config. Exits with a
 openclaw sign_in [--base-url <url>]
 ```
 
-| Parameter    | Type     | Required | Default                              | Description          |
-| ------------ | -------- | -------- | ------------------------------------ | -------------------- |
-| `--base-url` | `string` | No       | `https://app.coinfello.com/api/auth` | Auth server base URL |
+| Parameter    | Type     | Required | Default                         | Description          |
+| ------------ | -------- | -------- | ------------------------------- | -------------------- |
+| `--base-url` | `string` | No       | `${COINFELLO_BASE_URL}api/auth` | Auth server base URL |
+
+The default resolves using the `COINFELLO_BASE_URL` environment variable (defaults to `http://localhost:3000/`).
 
 Performs a Sign-In with Ethereum (SIWE) flow using the private key from config. Saves the `session_token` to config on success. The session token is automatically injected as a cookie for subsequent API calls.
 
@@ -86,7 +88,9 @@ openclaw send_prompt <prompt> [--use-redelegation]
 | `prompt`             | `string`  | Yes      | —       | Natural language prompt to send to CoinFello                |
 | `--use-redelegation` | `boolean` | No       | `false` | Use stored parent delegation to create a redelegation chain |
 
-The server determines whether a delegation is needed and, if so, what scope and chain to use. The client creates and signs the subdelegation based on the server's `ask_for_delegation` tool call response.
+The server determines whether a delegation is needed and, if so, what scope and chain to use. The client creates and signs the subdelegation based on the server's `ask_for_delegation` client tool call response.
+
+**ERC-6492 signature wrapping**: If the smart account has not yet been deployed on-chain, the CLI wraps the delegation signature using ERC-6492 (`serializeErc6492Signature`) with the account's factory address and factory data. This allows the delegation to be verified even before the account contract exists.
 
 ### openclaw get_transaction_status
 
@@ -115,14 +119,24 @@ Any chain exported by `viem/chains`. Common examples:
 
 ## API Endpoints
 
-Base URL: `https://app.coinfello.com`
+Base URL: Configured via the `COINFELLO_BASE_URL` environment variable (defaults to `http://localhost:3000/`).
 
-| Endpoint                                 | Method | Description                                       |
-| ---------------------------------------- | ------ | ------------------------------------------------- |
-| `/api/v1/automation/coinfello-address`   | GET    | Returns CoinFello's delegate address              |
-| `/api/v1/automation/coinfello-agents`    | GET    | Returns available CoinFello agents                |
-| `/api/conversation`                      | POST   | Submits prompt (and optionally signed delegation) |
-| `/api/v1/transaction_status?txn_id=<id>` | GET    | Returns transaction status                        |
+| Endpoint                                 | Method | Description                                          |
+| ---------------------------------------- | ------ | ---------------------------------------------------- |
+| `/api/v1/automation/coinfello-address`   | GET    | Returns CoinFello's delegate address                 |
+| `/api/v1/automation/coinfello-agents`    | GET    | Returns available CoinFello agents (id, name)        |
+| `/api/conversation`                      | POST   | Submits prompt (and optionally client tool response) |
+| `/api/v1/transaction_status?txn_id=<id>` | GET    | Returns transaction status                           |
+
+### GET /api/v1/automation/coinfello-agents response
+
+```json
+{
+  "availableAgents": [{ "id": 1, "name": "CoinFello Agent" }]
+}
+```
+
+The `send_prompt` command fetches this list and uses the first agent's `id` as `agentId` in conversation requests.
 
 ### POST /api/conversation body
 
@@ -136,16 +150,9 @@ Initial request (prompt only):
 }
 ```
 
-Follow-up request (with signed delegation):
+`agentId` is dynamically resolved from the `/api/v1/automation/coinfello-agents` endpoint (not hardcoded).
 
-```json
-{
-  "inputMessage": "send 5 USDC to 0xRecipient...",
-  "agentId": 1,
-  "stream": false,
-  "signed_subdelegation": { "...delegation object with signature..." }
-}
-```
+The follow-up request (sending the signed delegation back) is handled internally by `send_prompt` — no manual construction is needed.
 
 ### POST /api/conversation response
 
@@ -161,14 +168,15 @@ Delegation request (server asks client to sign):
 
 ```json
 {
-  "toolCalls": [
+  "clientToolCalls": [
     {
       "type": "function_call",
       "name": "ask_for_delegation",
-      "callId": "...",
+      "callId": "call_abc123...",
       "arguments": "{\"chainId\": 8453, \"scope\": {\"type\": \"erc20TransferAmount\", \"tokenAddress\": \"0x...\", \"maxAmount\": \"5000000\"}}"
     }
-  ]
+  ],
+  "chatId": "chat_abc123..."
 }
 ```
 
@@ -179,6 +187,13 @@ Final response (after delegation submitted):
   "txn_id": "abc123..."
 }
 ```
+
+| Field             | Type      | Description                                                    |
+| ----------------- | --------- | -------------------------------------------------------------- |
+| `responseText`    | `string?` | Text response for read-only prompts                            |
+| `txn_id`          | `string?` | Transaction ID when a transaction has been submitted           |
+| `clientToolCalls` | `array?`  | Server-requested client tool calls (e.g. `ask_for_delegation`) |
+| `chatId`          | `string?` | Chat session ID, sent back in follow-up requests               |
 
 ## Delegation Scope Types
 
