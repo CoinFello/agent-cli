@@ -122,13 +122,9 @@ program
   .command('send_prompt')
   .description('Send a prompt to CoinFello, creating a delegation if requested by the server')
   .argument('<prompt>', 'The prompt to send')
-  .option('--use-redelegation', 'Create a redelegation from a stored parent delegation')
   .action(
     async (
-      prompt: string,
-      opts: {
-        useRedelegation?: boolean
-      }
+      prompt: string
     ) => {
       try {
         const config = await loadConfig()
@@ -142,12 +138,6 @@ program
         }
         if (!config.chain) {
           console.error("Error: No chain found in config. Run 'create_account' first.")
-          process.exit(1)
-        }
-        if (opts.useRedelegation && !config.delegation) {
-          console.error(
-            "Error: --use-redelegation requires a parent delegation. Run 'set_delegation' first."
-          )
           process.exit(1)
         }
 
@@ -204,7 +194,6 @@ program
         const subdelegation = createSubdelegation({
           smartAccount,
           delegateAddress: delegateAddress as Hex,
-          parentDelegation: opts.useRedelegation ? config.delegation : undefined,
           scope,
         })
 

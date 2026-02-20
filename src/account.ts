@@ -9,6 +9,7 @@ import {
 import { PrivateKeyAccount, privateKeyToAccount } from 'viem/accounts'
 import { createPublicClient, http, type Hex, type Chain } from 'viem'
 import * as chains from 'viem/chains'
+import { randomBytes } from 'node:crypto'
 
 export type HybridSmartAccount = ToMetaMaskSmartAccountReturnType<Implementation.Hybrid>
 export type DelegationScope = CreateDelegationOptions['scope']
@@ -90,5 +91,6 @@ export function createSubdelegation({
     from: smartAccount.address,
     parentDelegation,
     environment: smartAccount.environment,
+    salt: `0x${randomBytes(32).toString('hex')}` as Hex
   })
 }
