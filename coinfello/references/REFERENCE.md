@@ -59,8 +59,8 @@ No parameters. Prints the stored smart account address from config. Exits with a
 npx @coinfello/agent-cli sign_in [--base-url <url>]
 ```
 
-| Parameter    | Type     | Required | Default                         | Description          |
-| ------------ | -------- | -------- | ------------------------------- | -------------------- |
+| Parameter    | Type     | Required | Default                         | Description                                                                                            |
+| ------------ | -------- | -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `--base-url` | `string` | No       | `${COINFELLO_BASE_URL}api/auth` | Auth server base URL. `COINFELLO_BASE_URL` defaults to `https://hyp3r-58q8qto10-hyperplay.vercel.app/` |
 
 The default resolves using the `COINFELLO_BASE_URL` environment variable (defaults to `https://hyp3r-58q8qto10-hyperplay.vercel.app/`).
@@ -222,9 +222,9 @@ All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC 
 
 ## Environment Variables
 
-| Variable             | Required | Default                                          | Description                    |
-| -------------------- | -------- | ------------------------------------------------ | ------------------------------ |
-| `COINFELLO_BASE_URL` | No       | `https://hyp3r-58q8qto10-hyperplay.vercel.app/`  | Base URL for the CoinFello API |
+| Variable             | Required | Default                                         | Description                    |
+| -------------------- | -------- | ----------------------------------------------- | ------------------------------ |
+| `COINFELLO_BASE_URL` | No       | `https://hyp3r-58q8qto10-hyperplay.vercel.app/` | Base URL for the CoinFello API |
 
 ## Security Considerations
 
