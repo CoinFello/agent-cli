@@ -11,9 +11,10 @@ import {
 import { loadSessionToken } from './cookies.js'
 import { signInWithAgent } from './siwe.js'
 import { parseScope, type RawScope } from './scope.js'
-import type { Hex } from 'viem'
+import { isErc6492Signature, serializeErc6492Signature, type Hex } from 'viem'
 import { generatePrivateKey } from 'viem/accounts'
 import type { Delegation } from '@metamask/smart-accounts-kit'
+import { SignedSubdelegation } from './types.js'
 
 const program = new Command()
 
@@ -180,10 +181,7 @@ program
         }
 
         // 3. Parse tool call arguments
-        const args = JSON.parse(delegationToolCall.arguments) as {
-          chainId: number
-          scope: RawScope
-        }
+        const args = JSON.parse(delegationToolCall.arguments) as any
         console.log(`Delegation requested: scope=${args.scope.type}, chainId=${args.chainId}`)
 
         // 4. Get CoinFello delegate address
@@ -209,14 +207,23 @@ program
         const signature = await smartAccount.signDelegation({
           delegation: subdelegation,
         })
-        const signedSubdelegation = { ...subdelegation, signature }
+        console.log('is 6492 ', isErc6492Signature(signature))
+        const factoryArgs = await smartAccount.getFactoryArgs()
+        const serializedSig = serializeErc6492Signature({
+          signature,
+          address: factoryArgs.factory as `0x${string}`,
+          data: factoryArgs.factoryData as `0x${string}`
+        })
+        const signedSubdelegation: SignedSubdelegation = { ...subdelegation, signature: serializedSig }
 
         // 8. Send signed delegation back to conversation endpoint
         console.log('Sending signed delegation...')
         const finalResponse = await sendConversation({
-          prompt,
+          prompt: 'Please refer to the previous conversation messages and redeem this delegation.',
           signedSubdelegation,
           chatId: initialResponse.chatId,
+          delegationArguments: JSON.stringify(args),
+          callId: delegationToolCall.callId
         })
 
         if (finalResponse.txn_id) {

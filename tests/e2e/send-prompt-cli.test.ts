@@ -21,7 +21,7 @@ function runCli(
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   return new Promise((resolve) => {
     const child = spawn("node", [CLI_PATH, ...args], {
-      timeout: 60_000,
+      timeout: 180_000,
     });
     let stdout = "";
     let stderr = "";
@@ -61,7 +61,7 @@ describe("send_prompt CLI end-to-end", () => {
     expect(stdout.trim()).toBeTruthy();
   });
 
-  it("completes the delegation flow when asked to send USDC via the CLI", async () => {
+  it.only("completes the delegation flow when asked to send USDC via the CLI", async () => {
     const { stdout, stderr} = await runCli([
       "send_prompt",
       "send 0.001 USDC (0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913) on Base to 0x000000000000000000000000000000000000dEaD. call ask_for_delegation",

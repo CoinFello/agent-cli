@@ -8,10 +8,13 @@ export async function fetchWithCookies(url: string, init?: RequestInit): Promise
   if (cookieString) {
     headers.set('Cookie', cookieString)
   }
+  headers.forEach(val=>console.log('header ', val))
+  console.log('url ', url, 'headers ')
 
   const response = await fetch(url, { ...init, headers })
 
   for (const cookie of response.headers.getSetCookie()) {
+    console.log('adding this cookie ', cookie)
     await cookieJar.setCookie(cookie, url)
   }
 
