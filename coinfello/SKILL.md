@@ -68,7 +68,7 @@ openclaw get_account
 Authenticates with CoinFello using Sign-In with Ethereum (SIWE) and your smart account. Saves the session token to local config.
 
 ```bash
-openclaw sign_in 
+openclaw sign_in
 ```
 
 - Signs in using the private key stored in config

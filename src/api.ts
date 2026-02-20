@@ -1,7 +1,8 @@
 import { fetchWithCookies } from './cookies.js'
 import { SignedSubdelegation } from './types.js'
 
-export const BASE_URL = process.env.COINFELLO_BASE_URL || 'https://hyp3r-58q8qto10-hyperplay.vercel.app/'
+export const BASE_URL =
+  process.env.COINFELLO_BASE_URL || 'https://hyp3r-58q8qto10-hyperplay.vercel.app/'
 export const BASE_URL_V1 = BASE_URL + 'api/v1'
 
 export async function getCoinFelloAddress(): Promise<string> {
