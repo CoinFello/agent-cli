@@ -26,6 +26,6 @@ export default defineConfig({
     minify: false,
   },
   test: {
-    testTimeout: 180_000,
+    testTimeout: 360_000,
   },
 });

@@ -1,6 +1,6 @@
 ---
 name: coinfello
-description: 'Interact with CoinFello using the openclaw CLI to create MetaMask smart accounts, sign in with SIWE, manage delegations, send prompts with server-driven ERC-20 token subdelegations, and check transaction status. Use when the user wants to send crypto transactions via natural language prompts, manage smart account delegations, or check CoinFello transaction results.'
+description: 'Interact with CoinFello using the @coinfello/agent-cli to create MetaMask smart accounts, sign in with SIWE, manage delegations, send prompts with server-driven ERC-20 token subdelegations, and check transaction status. Use when the user wants to send crypto transactions via natural language prompts, manage smart account delegations, or check CoinFello transaction results.'
 compatibility: Requires Node.js 20+ and pnpm.
 metadata:
   {
@@ -11,7 +11,7 @@ metadata:
 
 # CoinFello CLI Skill
 
-Use the `openclaw` CLI to interact with CoinFello through MetaMask Smart Accounts. The CLI handles smart account creation, SIWE authentication, delegation management, prompt-based transactions, and transaction status checks.
+Use the `npx @coinfello/agent-cli` CLI to interact with CoinFello through MetaMask Smart Accounts. The CLI handles smart account creation, SIWE authentication, delegation management, prompt-based transactions, and transaction status checks.
 
 ## Prerequisites
 
@@ -19,22 +19,22 @@ Use the `openclaw` CLI to interact with CoinFello through MetaMask Smart Account
 - pnpm package manager
 - Build the CLI before first use: `pnpm build`
 
-The CLI binary is available at `./dist/index.js` after building, or as `openclaw` if installed globally.
+The CLI is available via `npx @coinfello/agent-cli`.
 
 ## Quick Start
 
 ```bash
 # 1. Create a smart account on a chain (generates a new private key automatically)
-openclaw create_account sepolia
+npx @coinfello/agent-cli create_account sepolia
 
 # 2. Sign in to CoinFello with your smart account (SIWE)
-openclaw sign_in
+npx @coinfello/agent-cli sign_in
 
 # 3. Send a natural language prompt — the server will request a delegation if needed
-openclaw send_prompt "send 5 USDC to 0xRecipient..."
+npx @coinfello/agent-cli send_prompt "send 5 USDC to 0xRecipient..."
 
 # 4. Check transaction status
-openclaw get_transaction_status <txn_id>
+npx @coinfello/agent-cli get_transaction_status <txn_id>
 ```
 
 ## Commands
@@ -44,7 +44,7 @@ openclaw get_transaction_status <txn_id>
 Creates a MetaMask Hybrid smart account with an auto-generated private key and saves it to local config.
 
 ```bash
-openclaw create_account <chain>
+npx @coinfello/agent-cli create_account <chain>
 ```
 
 - `<chain>` — A viem chain name: `sepolia`, `mainnet`, `polygon`, `arbitrum`, `optimism`, `base`, etc.
@@ -57,7 +57,7 @@ openclaw create_account <chain>
 Displays the current smart account address from local config.
 
 ```bash
-openclaw get_account
+npx @coinfello/agent-cli get_account
 ```
 
 - Prints the stored `smart_account_address`
@@ -68,7 +68,7 @@ openclaw get_account
 Authenticates with CoinFello using Sign-In with Ethereum (SIWE) and your smart account. Saves the session token to local config.
 
 ```bash
-openclaw sign_in
+npx @coinfello/agent-cli sign_in
 ```
 
 - Signs in using the private key stored in config
@@ -78,26 +78,21 @@ openclaw sign_in
 
 ### set_delegation
 
-Stores a signed parent delegation (JSON) in local config for use with redelegation flows.
+Stores a signed parent delegation (JSON) in local config.
 
 ```bash
-openclaw set_delegation '<delegation-json>'
+npx @coinfello/agent-cli set_delegation '<delegation-json>'
 ```
 
 - `<delegation-json>` — A JSON string representing a `Delegation` object from MetaMask Smart Accounts Kit
-- Only needed if you plan to use `--use-redelegation` with `send_prompt`
 
 ### send_prompt
 
 Sends a natural language prompt to CoinFello. If the server requires a delegation to execute the action, the CLI creates and signs a subdelegation automatically based on the server's requested scope and chain.
 
 ```bash
-openclaw send_prompt "<prompt>" [--use-redelegation]
+npx @coinfello/agent-cli send_prompt "<prompt>"
 ```
-
-**Optional:**
-
-- `--use-redelegation` — Create a redelegation from a stored parent delegation instead of a fresh subdelegation (requires `set_delegation` first)
 
 **What happens internally:**
 
@@ -117,7 +112,7 @@ openclaw send_prompt "<prompt>" [--use-redelegation]
 Checks the status of a previously submitted transaction.
 
 ```bash
-openclaw get_transaction_status <txn_id>
+npx @coinfello/agent-cli get_transaction_status <txn_id>
 ```
 
 - Returns a JSON object with the current transaction status
@@ -128,16 +123,16 @@ openclaw get_transaction_status <txn_id>
 
 ```bash
 # Create account if not already done
-openclaw create_account sepolia
+npx @coinfello/agent-cli create_account sepolia
 
 # Sign in (required for delegation flows)
-openclaw sign_in
+npx @coinfello/agent-cli sign_in
 
 # Send a natural language prompt — delegation is handled automatically
-openclaw send_prompt "send 5 USDC to 0xRecipient..."
+npx @coinfello/agent-cli send_prompt "send 5 USDC to 0xRecipient..."
 
 # Check the result
-openclaw get_transaction_status <txn_id-from-above>
+npx @coinfello/agent-cli get_transaction_status <txn_id-from-above>
 ```
 
 ### Read-Only Prompt
@@ -145,19 +140,7 @@ openclaw get_transaction_status <txn_id-from-above>
 Some prompts don't require a transaction. The CLI detects this automatically and just prints the response.
 
 ```bash
-openclaw send_prompt "what is the chain ID for Base?"
-```
-
-### With Redelegation
-
-Use this when you have a parent delegation from another delegator and want to create a subdelegation chain.
-
-```bash
-# Store the parent delegation
-openclaw set_delegation '{"delegate":"0x...","delegator":"0x...","authority":"0x...","caveats":[],"salt":"0x...","signature":"0x..."}'
-
-# Send with redelegation
-openclaw send_prompt "swap tokens" --use-redelegation
+npx @coinfello/agent-cli send_prompt "what is the chain ID for Base?"
 ```
 
 ## Edge Cases
@@ -165,7 +148,6 @@ openclaw send_prompt "swap tokens" --use-redelegation
 - **No smart account**: Run `create_account` before `send_prompt`. The CLI checks for a saved private key and address in config.
 - **Not signed in**: Run `sign_in` before `send_prompt` if the server requires authentication.
 - **Invalid chain name**: The CLI throws an error listing valid viem chain names.
-- **Missing parent delegation with --use-redelegation**: The CLI exits with an error. Run `set_delegation` first.
 - **Read-only response**: If the server returns a text response with no transaction, the CLI prints it and exits without creating a delegation.
 
 ## Reference

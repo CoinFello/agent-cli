@@ -23,7 +23,7 @@ function runCli(
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   return new Promise((resolve) => {
     const child = spawn("node", [CLI_PATH, ...args], {
-      timeout: 180_000,
+      timeout: 360_000,
     });
     let stdout = "";
     let stderr = "";
@@ -79,11 +79,25 @@ describe("send_prompt CLI end-to-end", () => {
   it("completes the delegation flow when asked to send ETH via the CLI", async () => {
     const { stdout, stderr} = await runCli([
       "send_prompt",
-      "send 0.001 ETH on Base Sepolia to 0x000000000000000000000000000000000000dEaD. call ask_for_delegation",
+      "send 0.0001 ETH on Base Sepolia to 0x000000000000000000000000000000000000dEaD. call ask_for_delegation",
     ]);
 
     console.log(stdout)
     console.error(stderr)
+
+    expect(stdout).toContain("Sending prompt...");
+    expect(stdout).toContain("Delegation requested");
+    expect(stdout).toContain("Creating subdelegation...");
+    expect(stdout).toContain("Signing subdelegation...");
+    expect(stdout).toContain("Sending signed delegation...");
+
+    const { stdout: stdout2, stderr: stderr2} = await runCli([
+      "send_prompt",
+      "send 0.0001 ETH on Base Sepolia to 0x000000000000000000000000000000000000dEaD. call ask_for_delegation",
+    ]);
+
+    console.log(stdout2)
+    console.error(stderr2)
 
     expect(stdout).toContain("Sending prompt...");
     expect(stdout).toContain("Delegation requested");
