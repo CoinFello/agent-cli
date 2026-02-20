@@ -61,9 +61,9 @@ npx @coinfello/agent-cli sign_in [--base-url <url>]
 
 | Parameter    | Type     | Required | Default                         | Description          |
 | ------------ | -------- | -------- | ------------------------------- | -------------------- |
-| `--base-url` | `string` | No       | `${COINFELLO_BASE_URL}api/auth` | Auth server base URL |
+| `--base-url` | `string` | No       | `${COINFELLO_BASE_URL}api/auth` | Auth server base URL. `COINFELLO_BASE_URL` defaults to `https://hyp3r-58q8qto10-hyperplay.vercel.app/` |
 
-The default resolves using the `COINFELLO_BASE_URL` environment variable (defaults to `http://localhost:3000/`).
+The default resolves using the `COINFELLO_BASE_URL` environment variable (defaults to `https://hyp3r-58q8qto10-hyperplay.vercel.app/`).
 
 Performs a Sign-In with Ethereum (SIWE) flow using the private key from config. Saves the `session_token` to config on success. The session token is automatically injected as a cookie for subsequent API calls.
 
@@ -118,7 +118,7 @@ Any chain exported by `viem/chains`. Common examples:
 
 ## API Endpoints
 
-Base URL: Configured via the `COINFELLO_BASE_URL` environment variable (defaults to `http://localhost:3000/`).
+Base URL: Configured via the `COINFELLO_BASE_URL` environment variable (defaults to `https://hyp3r-58q8qto10-hyperplay.vercel.app/`).
 
 | Endpoint                                 | Method | Description                                          |
 | ---------------------------------------- | ------ | ---------------------------------------------------- |
@@ -219,6 +219,18 @@ All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC 
 | USDT  | 6        | amounts use 6 decimal places  |
 | DAI   | 18       | amounts use 18 decimal places |
 | WETH  | 18       | amounts use 18 decimal places |
+
+## Environment Variables
+
+| Variable             | Required | Default                                          | Description                    |
+| -------------------- | -------- | ------------------------------------------------ | ------------------------------ |
+| `COINFELLO_BASE_URL` | No       | `https://hyp3r-58q8qto10-hyperplay.vercel.app/`  | Base URL for the CoinFello API |
+
+## Security Considerations
+
+- **Private key storage**: `create_account` generates and stores a private key in plaintext at `~/.clawdbot/skills/coinfello/config.json`. Restrict file permissions (e.g. `chmod 600`) and do not share or commit this file.
+- **Session token storage**: `sign_in` stores a SIWE session token in the same config file.
+- **Automatic delegation signing**: `send_prompt` may create and sign delegations based on scopes requested by the server, then submit them to the CoinFello API endpoint. Ensure the `COINFELLO_BASE_URL` points to a trusted endpoint before running delegation flows.
 
 ## Error Messages
 
