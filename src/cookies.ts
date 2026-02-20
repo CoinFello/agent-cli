@@ -8,7 +8,7 @@ export async function fetchWithCookies(url: string, init?: RequestInit): Promise
   if (cookieString) {
     headers.set('Cookie', cookieString)
   }
-  headers.forEach(val=>console.log('header ', val))
+  headers.forEach((val) => console.log('header ', val))
   console.log('url ', url, 'headers ')
 
   const response = await fetch(url, { ...init, headers })

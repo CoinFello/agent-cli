@@ -11,7 +11,7 @@ import { dirname, resolve } from "node:path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CLI_PATH = resolve(__dirname, "../../dist/index.js");
 const SIWE_BASE_URL = `${BASE_URL}api/auth`;
-const CHAIN = "sepolia";
+const CHAIN = "baseSepolia";
 
 // NOTE: This test makes real network calls, writes to
 // ~/.clawdbot/skills/coinfello/config.json, and requires a prior `pnpm build`.
@@ -64,7 +64,7 @@ describe("send_prompt CLI end-to-end", () => {
   it.only("completes the delegation flow when asked to send USDC via the CLI", async () => {
     const { stdout, stderr} = await runCli([
       "send_prompt",
-      "send 0.001 USDC (0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913) on Base to 0x000000000000000000000000000000000000dEaD. call ask_for_delegation",
+      "send 0.001 ETH on Base Sepolia to 0x000000000000000000000000000000000000dEaD. call ask_for_delegation",
     ]);
 
     console.log(stdout)

@@ -1,7 +1,7 @@
 import { fetchWithCookies } from './cookies.js'
 import { SignedSubdelegation } from './types.js'
 
-export const BASE_URL = process.env.COINFELLO_BASE_URL || 'https://app.coinfello.com/'
+export const BASE_URL = process.env.COINFELLO_BASE_URL || 'http://localhost:3000/'
 export const BASE_URL_V1 = BASE_URL + 'api/v1'
 
 export async function getCoinFelloAddress(): Promise<string> {
@@ -61,7 +61,7 @@ export async function sendConversation({
   signedSubdelegation,
   chatId,
   delegationArguments,
-  callId
+  callId,
 }: SendConversationParams): Promise<ConversationResponse> {
   const agents = await getCoinFelloAgents()
   const body: Record<string, unknown> = {
@@ -76,12 +76,12 @@ export async function sendConversation({
       output: JSON.stringify({
         success: true,
         delegation: signedSubdelegation,
-        chainId: delegationArguments ? JSON.parse(delegationArguments).chainId : undefined
+        chainId: delegationArguments ? JSON.parse(delegationArguments).chainId : undefined,
       }),
       type: 'function_call_output',
       callId: callId,
       name: 'ask_for_delegation',
-      arguments: delegationArguments
+      arguments: delegationArguments,
     }
   }
   if (chatId) {

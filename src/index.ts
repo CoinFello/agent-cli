@@ -1,5 +1,10 @@
 import { Command } from 'commander'
-import { createSmartAccount, getSmartAccount, createSubdelegation } from './account.js'
+import {
+  createSmartAccount,
+  getSmartAccount,
+  createSubdelegation,
+  resolveChainInput,
+} from './account.js'
 import { loadConfig, saveConfig, CONFIG_PATH } from './config.js'
 import {
   getCoinFelloAddress,
@@ -11,7 +16,7 @@ import {
 import { loadSessionToken } from './cookies.js'
 import { signInWithAgent } from './siwe.js'
 import { parseScope, type RawScope } from './scope.js'
-import { isErc6492Signature, serializeErc6492Signature, type Hex } from 'viem'
+import { createPublicClient, http, serializeErc6492Signature, type Hex } from 'viem'
 import { generatePrivateKey } from 'viem/accounts'
 import type { Delegation } from '@metamask/smart-accounts-kit'
 import { SignedSubdelegation } from './types.js'
@@ -207,14 +212,25 @@ program
         const signature = await smartAccount.signDelegation({
           delegation: subdelegation,
         })
-        console.log('is 6492 ', isErc6492Signature(signature))
-        const factoryArgs = await smartAccount.getFactoryArgs()
-        const serializedSig = serializeErc6492Signature({
-          signature,
-          address: factoryArgs.factory as `0x${string}`,
-          data: factoryArgs.factoryData as `0x${string}`
+        let sig = signature
+        const chain = resolveChainInput(config.chain)
+
+        const publicClient = createPublicClient({
+          chain,
+          transport: http(),
         })
-        const signedSubdelegation: SignedSubdelegation = { ...subdelegation, signature: serializedSig }
+        const code = await publicClient.getCode({ address: smartAccount.address })
+        const isDeployed = !!(code && code !== '0x')
+        if (!isDeployed) {
+          const factoryArgs = await smartAccount.getFactoryArgs()
+          sig = serializeErc6492Signature({
+            signature,
+            address: factoryArgs.factory as `0x${string}`,
+            data: factoryArgs.factoryData as `0x${string}`,
+          })
+        }
+
+        const signedSubdelegation: SignedSubdelegation = { ...subdelegation, signature: sig }
 
         // 8. Send signed delegation back to conversation endpoint
         console.log('Sending signed delegation...')
@@ -223,7 +239,7 @@ program
           signedSubdelegation,
           chatId: initialResponse.chatId,
           delegationArguments: JSON.stringify(args),
-          callId: delegationToolCall.callId
+          callId: delegationToolCall.callId,
         })
 
         if (finalResponse.txn_id) {
