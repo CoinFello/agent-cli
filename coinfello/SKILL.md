@@ -68,10 +68,9 @@ openclaw get_account
 Authenticates with CoinFello using Sign-In with Ethereum (SIWE) and your smart account. Saves the session token to local config.
 
 ```bash
-openclaw sign_in [--base-url <url>]
+openclaw sign_in
 ```
 
-- `--base-url <url>` — Auth server base URL (default: `https://app.coinfello.com/api/auth`)
 - Signs in using the private key stored in config
 - Saves the session token to `~/.clawdbot/skills/coinfello/config.json`
 - The session token is loaded automatically for subsequent `send_prompt` calls
@@ -102,15 +101,15 @@ openclaw send_prompt "<prompt>" [--use-redelegation]
 
 **What happens internally:**
 
-1. Sends the prompt to CoinFello's conversation endpoint
-2. If the server returns a read-only response (no transaction needed) → prints the response text and exits
-3. If the server returns a `txn_id` directly → prints it and exits
-4. If the server sends an `ask_for_delegation` tool call with a `chainId` and `scope`:
+1. Fetches available agents from `/api/v1/automation/coinfello-agents` and sends the prompt to CoinFello's conversation endpoint
+2. If the server returns a read-only response (no `clientToolCalls` and no `txn_id`) → prints the response text and exits
+3. If the server returns a `txn_id` directly with no tool calls → prints it and exits
+4. If the server sends an `ask_for_delegation` client tool call with a `chainId` and `scope`:
    - Fetches CoinFello's delegate address
    - Rebuilds the smart account using the chain ID from the tool call
    - Parses the server-provided scope (supports ERC-20, native token, ERC-721, and function call scopes)
-   - Creates and signs a subdelegation
-   - Sends the signed delegation back to the conversation endpoint
+   - Creates and signs a subdelegation (wraps with ERC-6492 signature if the smart account is not yet deployed on-chain)
+   - Sends the signed delegation back as a `clientToolCallResponse` along with the `chatId` and `callId` from the initial response
    - Returns a `txn_id` for tracking
 
 ### get_transaction_status

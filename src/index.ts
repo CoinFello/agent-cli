@@ -1,13 +1,25 @@
 import { Command } from 'commander'
-import { createSmartAccount, getSmartAccount, createSubdelegation } from './account.js'
+import {
+  createSmartAccount,
+  getSmartAccount,
+  createSubdelegation,
+  resolveChainInput,
+} from './account.js'
 import { loadConfig, saveConfig, CONFIG_PATH } from './config.js'
-import { getCoinFelloAddress, sendConversation, getTransactionStatus, BASE_URL_V1 } from './api.js'
+import {
+  getCoinFelloAddress,
+  sendConversation,
+  getTransactionStatus,
+  BASE_URL_V1,
+  BASE_URL,
+} from './api.js'
 import { loadSessionToken } from './cookies.js'
 import { signInWithAgent } from './siwe.js'
-import { parseScope, type RawScope } from './scope.js'
-import type { Hex } from 'viem'
+import { parseScope } from './scope.js'
+import { createPublicClient, http, serializeErc6492Signature, type Hex } from 'viem'
 import { generatePrivateKey } from 'viem/accounts'
 import type { Delegation } from '@metamask/smart-accounts-kit'
+import { SignedSubdelegation } from './types.js'
 
 const program = new Command()
 
@@ -68,7 +80,7 @@ program
   .option(
     '--base-url <baseUrl>',
     'The server base URL override (e.g. https://api.example.com)',
-    'https://app.coinfello.com/api/auth'
+    `${BASE_URL}api/auth`
   )
   .action(async (opts: { baseUrl: string }) => {
     try {
@@ -151,20 +163,20 @@ program
         })
 
         // Read-only response: no tool calls and no transaction
-        if (!initialResponse.toolCalls?.length && !initialResponse.txn_id) {
+        if (!initialResponse.clientToolCalls?.length && !initialResponse.txn_id) {
           console.log(initialResponse.responseText ?? '')
           return
         }
 
         // If we got a direct txn_id with no tool calls, we're done
-        if (initialResponse.txn_id && !initialResponse.toolCalls?.length) {
+        if (initialResponse.txn_id && !initialResponse.clientToolCalls?.length) {
           console.log('Transaction submitted successfully.')
           console.log(`Transaction ID: ${initialResponse.txn_id}`)
           return
         }
 
         // 2. Look for ask_for_delegation tool call
-        const delegationToolCall = initialResponse.toolCalls?.find(
+        const delegationToolCall = initialResponse.clientToolCalls?.find(
           (tc) => tc.name === 'ask_for_delegation'
         )
         if (!delegationToolCall) {
@@ -174,10 +186,8 @@ program
         }
 
         // 3. Parse tool call arguments
-        const args = JSON.parse(delegationToolCall.arguments) as {
-          chainId: number
-          scope: RawScope
-        }
+        /* eslint-disable-next-line */
+        const args = JSON.parse(delegationToolCall.arguments) as any
         console.log(`Delegation requested: scope=${args.scope.type}, chainId=${args.chainId}`)
 
         // 4. Get CoinFello delegate address
@@ -203,20 +213,41 @@ program
         const signature = await smartAccount.signDelegation({
           delegation: subdelegation,
         })
-        const signedSubdelegation = { ...subdelegation, signature }
+        let sig = signature
+        const chain = resolveChainInput(config.chain)
+
+        const publicClient = createPublicClient({
+          chain,
+          transport: http(),
+        })
+        const code = await publicClient.getCode({ address: smartAccount.address })
+        const isDeployed = !!(code && code !== '0x')
+        if (!isDeployed) {
+          const factoryArgs = await smartAccount.getFactoryArgs()
+          sig = serializeErc6492Signature({
+            signature,
+            address: factoryArgs.factory as `0x${string}`,
+            data: factoryArgs.factoryData as `0x${string}`,
+          })
+        }
+
+        const signedSubdelegation: SignedSubdelegation = { ...subdelegation, signature: sig }
 
         // 8. Send signed delegation back to conversation endpoint
         console.log('Sending signed delegation...')
         const finalResponse = await sendConversation({
-          prompt,
+          prompt: 'Please refer to the previous conversation messages and redeem this delegation.',
           signedSubdelegation,
+          chatId: initialResponse.chatId,
+          delegationArguments: JSON.stringify(args),
+          callId: delegationToolCall.callId,
         })
 
         if (finalResponse.txn_id) {
           console.log('Transaction submitted successfully.')
           console.log(`Transaction ID: ${finalResponse.txn_id}`)
         } else {
-          console.log('Response:', JSON.stringify(finalResponse, null, 2))
+          console.log('Final Response:', JSON.stringify(finalResponse, null, 2))
         }
       } catch (err) {
         console.error(`Failed to send prompt: ${(err as Error).message}`)

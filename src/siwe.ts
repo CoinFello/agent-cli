@@ -2,7 +2,7 @@ import { createSiweMessage } from 'viem/siwe'
 import { type Hex, type Address } from 'viem'
 import { Config, saveConfig } from './config.js'
 import { createSmartAccount, resolveChain } from './account.js'
-import { fetchWithCookies } from './cookies.js'
+import { fetchWithCookies, cookieJar } from './cookies.js'
 
 export interface SignInResult {
   token: string
@@ -88,9 +88,11 @@ export async function signInWithAgent(baseUrl: string, config: Config): Promise<
     throw new Error('SIWE verification returned success: false')
   }
 
-  // Persist session token
+  // Persist session token from the cookie jar (includes the full signed value)
   console.log('saving token...')
-  config.session_token = result.token
+  const cookies = await cookieJar.getCookies(baseUrl)
+  const sessionCookie = cookies.find((c) => c.key === 'better-auth.session_token')
+  config.session_token = sessionCookie?.value ?? result.token
   await saveConfig(config)
 
   return result

@@ -33,7 +33,7 @@ export function resolveChainById(chainId: number): Chain {
   return chain
 }
 
-function resolveChainInput(chainInput: string | number): Chain {
+export function resolveChainInput(chainInput: string | number): Chain {
   if (typeof chainInput === 'number') {
     return resolveChainById(chainInput)
   }

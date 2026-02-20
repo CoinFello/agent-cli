@@ -22,5 +22,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Install dependencies
+        run: pnpm build
+
+      - name: Add other env secrets
+        run: |
+          echo "PRIVATE_KEY=${{ secrets.PRIVATE_KEY }}" >> .env 
+
       - name: Run e2e tests
         run: pnpm test:e2e
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
