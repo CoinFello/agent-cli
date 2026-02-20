@@ -44,16 +44,19 @@ export interface ConversationResponse {
   responseText?: string
   txn_id?: string
   clientToolCalls?: ToolCall[]
+  chatId?: string | null
 }
 
 export interface SendConversationParams {
   prompt: string
   signedSubdelegation?: unknown
+  chatId?: string | null
 }
 
 export async function sendConversation({
   prompt,
   signedSubdelegation,
+  chatId,
 }: SendConversationParams): Promise<ConversationResponse> {
   const agents = await getCoinFelloAgents()
   const body: Record<string, unknown> = {
@@ -65,6 +68,9 @@ export async function sendConversation({
   }
   if (signedSubdelegation !== undefined) {
     body.signed_subdelegation = signedSubdelegation
+  }
+  if (chatId) {
+    body.chatId = chatId
   }
 
   const response = await fetchWithCookies(`${BASE_URL}/api/conversation`, {

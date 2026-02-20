@@ -216,13 +216,14 @@ program
         const finalResponse = await sendConversation({
           prompt,
           signedSubdelegation,
+          chatId: initialResponse.chatId,
         })
 
         if (finalResponse.txn_id) {
           console.log('Transaction submitted successfully.')
           console.log(`Transaction ID: ${finalResponse.txn_id}`)
         } else {
-          console.log('Response:', JSON.stringify(finalResponse, null, 2))
+          console.log('Final Response:', JSON.stringify(finalResponse, null, 2))
         }
       } catch (err) {
         console.error(`Failed to send prompt: ${(err as Error).message}`)
