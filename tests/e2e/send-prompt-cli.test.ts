@@ -61,7 +61,7 @@ describe("send_prompt CLI end-to-end", () => {
     expect(stdout.trim()).toBeTruthy();
   });
 
-  it.only("completes the delegation flow when asked to send USDC via the CLI", async () => {
+  it("completes the delegation flow when asked to send USDC via the CLI", async () => {
     const { stdout, stderr} = await runCli([
       "send_prompt",
       "send 0.001 ETH on Base Sepolia to 0x000000000000000000000000000000000000dEaD. call ask_for_delegation",
