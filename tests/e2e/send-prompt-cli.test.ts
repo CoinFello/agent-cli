@@ -41,34 +41,21 @@ function runCli(
 
 describe("send_prompt CLI end-to-end", () => {
   beforeAll(async () => {
-    console.log("[beforeAll] Starting setup...");
-    console.log("[beforeAll] PRIVATE_KEY present:", !!process.env.PRIVATE_KEY);
-    console.log("[beforeAll] BASE_URL:", BASE_URL);
-    console.log("[beforeAll] CLI_PATH:", CLI_PATH);
-
     const privateKey = generatePrivateKey();
-    console.log("[beforeAll] Generated ephemeral private key");
-
     const { address } = await createSmartAccount(privateKey, CHAIN);
-    console.log("[beforeAll] Smart account address:", address);
 
     // Fund the smart account with 0.002 Base Sepolia ETH
     const fundingKey = process.env.PRIVATE_KEY as Hex;
     const fundingAccount = privateKeyToAccount(fundingKey);
-    console.log("[beforeAll] Funding account address:", fundingAccount.address);
-
     const walletClient = createWalletClient({
       account: fundingAccount,
       chain: baseSepolia,
       transport: http(),
     });
-
-    console.log("[beforeAll] Sending 0.002 ETH to smart account...");
-    const txHash = await walletClient.sendTransaction({
+    await walletClient.sendTransaction({
       to: address as Hex,
       value: parseEther("0.002"),
     });
-    console.log("[beforeAll] Funding tx hash:", txHash);
 
     const config = {
       private_key: privateKey as Hex,
@@ -76,32 +63,27 @@ describe("send_prompt CLI end-to-end", () => {
       chain: CHAIN,
     };
 
-    console.log("[beforeAll] Signing in with agent...");
     await signInWithAgent(SIWE_BASE_URL, config);
-    console.log("[beforeAll] Setup complete");
   });
 
   it("returns a text response for a read-only prompt via the CLI", async () => {
-    console.log("[test:read-only] Running CLI with 'hello' prompt...");
     const { stdout, stderr, exitCode } = await runCli(["send_prompt", "hello"]);
 
-    console.log("[test:read-only] exitCode:", exitCode);
-    console.log("[test:read-only] stdout:", stdout);
-    console.error("[test:read-only] stderr:", stderr);
+    console.log(stdout)
+    console.error(stderr)
 
     expect(exitCode).toBe(0);
     expect(stdout.trim()).toBeTruthy();
   });
 
   it("completes the delegation flow when asked to send ETH via the CLI", async () => {
-    console.log("[test:delegation] Running CLI with delegation prompt...");
     const { stdout, stderr} = await runCli([
       "send_prompt",
       "send 0.001 ETH on Base Sepolia to 0x000000000000000000000000000000000000dEaD. call ask_for_delegation",
     ]);
 
-    console.log("[test:delegation] stdout:", stdout);
-    console.error("[test:delegation] stderr:", stderr);
+    console.log(stdout)
+    console.error(stderr)
 
     expect(stdout).toContain("Sending prompt...");
     expect(stdout).toContain("Delegation requested");
