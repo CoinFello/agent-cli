@@ -2,8 +2,11 @@ import { Command } from 'commander'
 import {
   createSmartAccount,
   getSmartAccount,
+  createSmartAccountWithSecureEnclave,
+  getSmartAccountFromSecureEnclave,
   createSubdelegation,
   resolveChainInput,
+  type HybridSmartAccount,
 } from './account.js'
 import { loadConfig, saveConfig, CONFIG_PATH } from './config.js'
 import {
@@ -20,6 +23,7 @@ import { createPublicClient, http, serializeErc6492Signature, type Hex } from 'v
 import { generatePrivateKey } from 'viem/accounts'
 import type { Delegation } from '@metamask/smart-accounts-kit'
 import { SignedSubdelegation } from './types.js'
+import { isSecureEnclaveAvailable } from './secure-enclave/index.js'
 
 const program = new Command()
 
@@ -33,21 +37,51 @@ program
   .command('create_account')
   .description('Create a MetaMask smart account and save its address to local config')
   .argument('<chain>', 'Chain name (e.g. sepolia, mainnet, polygon, arbitrum)')
-  .action(async (chain: string) => {
+  .option('--secure-enclave', 'Use macOS Secure Enclave P256 key (macOS only)')
+  .action(async (chain: string, opts: { secureEnclave?: boolean }) => {
     try {
-      console.log(`Creating smart account on ${chain}...`)
-      const privateKey = generatePrivateKey()
-      const { address } = await createSmartAccount(privateKey, chain)
+      if (opts.secureEnclave) {
+        if (!isSecureEnclaveAvailable()) {
+          console.error('Error: Secure Enclave is only available on macOS.')
+          process.exit(1)
+        }
+        console.log(`Creating Secure Enclave-backed smart account on ${chain}...`)
+        const { address, keyTag, publicKeyX, publicKeyY, keyId } =
+          await createSmartAccountWithSecureEnclave(chain)
 
-      const config = await loadConfig()
-      config.private_key = privateKey
-      config.smart_account_address = address
-      config.chain = chain
-      await saveConfig(config)
+        const config = await loadConfig()
+        config.signer_type = 'secureEnclave'
+        config.smart_account_address = address
+        config.chain = chain
+        config.secure_enclave = {
+          key_tag: keyTag,
+          public_key_x: publicKeyX,
+          public_key_y: publicKeyY,
+          key_id: keyId,
+        }
+        delete config.private_key
+        await saveConfig(config)
 
-      console.log('Smart account created successfully.')
-      console.log(`Address: ${address}`)
-      console.log(`Config saved to: ${CONFIG_PATH}`)
+        console.log('Secure Enclave smart account created successfully.')
+        console.log(`Address: ${address}`)
+        console.log(`Key tag: ${keyTag}`)
+        console.log(`Config saved to: ${CONFIG_PATH}`)
+      } else {
+        console.log(`Creating smart account on ${chain}...`)
+        const privateKey = generatePrivateKey()
+        const { address } = await createSmartAccount(privateKey, chain)
+
+        const config = await loadConfig()
+        config.private_key = privateKey
+        config.signer_type = 'privateKey'
+        config.smart_account_address = address
+        config.chain = chain
+        await saveConfig(config)
+
+        console.log('Smart account created successfully.')
+        console.log(`Address: ${address}`)
+        console.log(`Config saved to: ${CONFIG_PATH}`)
+      }
     } catch (err) {
       console.error(`Failed to create account: ${(err as Error).message}`)
       process.exit(1)
@@ -125,16 +159,16 @@ program
   .action(async (prompt: string) => {
     try {
       const config = await loadConfig()
-      if (!config.private_key) {
-        console.error("Error: No private key found in config. Run 'create_account' first.")
-        process.exit(1)
-      }
       if (!config.smart_account_address) {
         console.error("Error: No smart account found. Run 'create_account' first.")
         process.exit(1)
       }
       if (!config.chain) {
         console.error("Error: No chain found in config. Run 'create_account' first.")
+        process.exit(1)
+      }
+      if (config.signer_type !== 'secureEnclave' && !config.private_key) {
+        console.error("Error: No private key found in config. Run 'create_account' first.")
         process.exit(1)
       }
 
@@ -183,7 +217,24 @@ program
 
       // 5. Rebuild smart account using chainId from tool call
       console.log('Loading smart account...')
-      const smartAccount = await getSmartAccount(config.private_key as Hex, args.chainId)
+      let smartAccount: HybridSmartAccount
+      if (config.signer_type === 'secureEnclave') {
+        if (!config.secure_enclave) {
+          console.error(
+            "Error: Secure Enclave config missing. Run 'create_account --secure-enclave' first."
+          )
+          process.exit(1)
+        }
+        smartAccount = await getSmartAccountFromSecureEnclave(
+          config.secure_enclave.key_tag,
+          config.secure_enclave.public_key_x,
+          config.secure_enclave.public_key_y,
+          config.secure_enclave.key_id as Hex,
+          args.chainId
+        )
+      } else {
+        smartAccount = await getSmartAccount(config.private_key as Hex, args.chainId)
+      }
 
       // 6. Parse scope and create subdelegation
       const scope = parseScope(args.scope)

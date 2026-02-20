@@ -9,6 +9,13 @@ export interface Config {
   chain?: string
   delegation?: Delegation
   session_token?: string
+  signer_type?: 'privateKey' | 'secureEnclave'
+  secure_enclave?: {
+    key_tag: string
+    public_key_x: string // hex
+    public_key_y: string // hex
+    key_id: string // hex, on-chain P256 key identifier
+  }
 }
 
 const CONFIG_DIR = join(homedir(), '.clawdbot', 'skills', 'coinfello')

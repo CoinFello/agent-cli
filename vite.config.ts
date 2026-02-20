@@ -17,6 +17,8 @@ export default defineConfig({
         "viem",
         "viem/accounts",
         "viem/chains",
+        "viem/siwe",
+        "viem/account-abstraction",
         "@metamask/smart-accounts-kit",
       ],
       output: {
