@@ -78,26 +78,21 @@ npx @coinfello/agent-cli sign_in
 
 ### set_delegation
 
-Stores a signed parent delegation (JSON) in local config for use with redelegation flows.
+Stores a signed parent delegation (JSON) in local config.
 
 ```bash
 npx @coinfello/agent-cli set_delegation '<delegation-json>'
 ```
 
 - `<delegation-json>` — A JSON string representing a `Delegation` object from MetaMask Smart Accounts Kit
-- Only needed if you plan to use `--use-redelegation` with `send_prompt`
 
 ### send_prompt
 
 Sends a natural language prompt to CoinFello. If the server requires a delegation to execute the action, the CLI creates and signs a subdelegation automatically based on the server's requested scope and chain.
 
 ```bash
-npx @coinfello/agent-cli send_prompt "<prompt>" [--use-redelegation]
+npx @coinfello/agent-cli send_prompt "<prompt>"
 ```
-
-**Optional:**
-
-- `--use-redelegation` — Create a redelegation from a stored parent delegation instead of a fresh subdelegation (requires `set_delegation` first)
 
 **What happens internally:**
 
@@ -148,24 +143,11 @@ Some prompts don't require a transaction. The CLI detects this automatically and
 npx @coinfello/agent-cli send_prompt "what is the chain ID for Base?"
 ```
 
-### With Redelegation
-
-Use this when you have a parent delegation from another delegator and want to create a subdelegation chain.
-
-```bash
-# Store the parent delegation
-npx @coinfello/agent-cli set_delegation '{"delegate":"0x...","delegator":"0x...","authority":"0x...","caveats":[],"salt":"0x...","signature":"0x..."}'
-
-# Send with redelegation
-npx @coinfello/agent-cli send_prompt "swap tokens" --use-redelegation
-```
-
 ## Edge Cases
 
 - **No smart account**: Run `create_account` before `send_prompt`. The CLI checks for a saved private key and address in config.
 - **Not signed in**: Run `sign_in` before `send_prompt` if the server requires authentication.
 - **Invalid chain name**: The CLI throws an error listing valid viem chain names.
-- **Missing parent delegation with --use-redelegation**: The CLI exits with an error. Run `set_delegation` first.
 - **Read-only response**: If the server returns a text response with no transaction, the CLI prints it and exits without creating a delegation.
 
 ## Reference
