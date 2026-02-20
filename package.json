@@ -1,6 +1,6 @@
 {
   "name": "@coinfello/agent-cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "",
   "type": "module",
   "main": "dist/index.js",
@@ -15,6 +15,7 @@
   },
   "scripts": {
     "build": "vite build",
+    "build:swift": "bash swift/SecureEnclaveSigner/build.sh",
     "codecheck": "tsc --noEmit",
     "lint": "eslint src",
     "prettier-fix": "prettier --write src coinfello",

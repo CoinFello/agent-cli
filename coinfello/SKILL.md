@@ -1,12 +1,18 @@
 ---
 name: coinfello
 description: 'Interact with CoinFello using the @coinfello/agent-cli to create MetaMask smart accounts, sign in with SIWE, manage delegations, send prompts with server-driven ERC-20 token subdelegations, and check transaction status. Use when the user wants to send crypto transactions via natural language prompts, manage smart account delegations, or check CoinFello transaction results.'
-compatibility: Requires Node.js 20+ and pnpm.
+compatibility: Requires Node.js 20+ (npx is included with Node.js).
 metadata:
-  {
-    'clawdbot':
-      { 'emoji': '👋', 'homepage': 'https://coinfello.com', 'requires': { 'bins': ['node'] } },
-  }
+  clawdbot:
+    emoji: '👋'
+    homepage: 'https://coinfello.com'
+    requires:
+      bins: ['node', 'npx']
+      env:
+        - name: COINFELLO_BASE_URL
+          description: 'Base URL for the CoinFello API server'
+          required: false
+          default: 'https://hyp3r-58q8qto10-hyperplay.vercel.app/'
 ---
 
 # CoinFello CLI Skill
@@ -15,11 +21,25 @@ Use the `npx @coinfello/agent-cli` CLI to interact with CoinFello through MetaMa
 
 ## Prerequisites
 
-- Node.js 20 or later
-- pnpm package manager
-- Build the CLI before first use: `pnpm build`
+- Node.js 20 or later (npx is included with Node.js)
 
-The CLI is available via `npx @coinfello/agent-cli`.
+The CLI is available via `npx @coinfello/agent-cli`. No manual build step is required.
+
+## Environment Variables
+
+| Variable             | Required | Default                                         | Description                    |
+| -------------------- | -------- | ----------------------------------------------- | ------------------------------ |
+| `COINFELLO_BASE_URL` | No       | `https://hyp3r-58q8qto10-hyperplay.vercel.app/` | Base URL for the CoinFello API |
+
+## Security Notice
+
+This skill performs the following sensitive operations:
+
+- **Private key generation and storage**: Running `create_account` generates a new private key and stores it **in plaintext** at `~/.clawdbot/skills/coinfello/config.json`. Protect this file accordingly.
+- **Session token storage**: Running `sign_in` stores a SIWE session token in the same config file.
+- **Delegation signing**: Running `send_prompt` may automatically create and sign blockchain delegations based on server-requested scopes, then submit them to the CoinFello API.
+
+Users should ensure they trust the CoinFello API endpoint configured via `COINFELLO_BASE_URL` before running delegation flows.
 
 ## Quick Start
 
