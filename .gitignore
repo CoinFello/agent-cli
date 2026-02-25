@@ -141,3 +141,6 @@ vite.config.ts.timestamp-*
 .vite/
 
 dist
+
+swift/SecureEnclaveSigner/.build
+**/.DS_Store

@@ -24,7 +24,7 @@ export interface SecureEnclaveSignature {
 function getBinaryPath(): string {
   // In production (dist/index.js), the binary is at dist/secure-enclave-signer
   // In dev, fall back to the swift build output
-  const distPath = join(__dirname, 'secure-enclave-signer')
+  const distPath = join(__dirname, '../../dist', 'secure-enclave-signer')
   const devPath = join(
     __dirname,
     '..',
