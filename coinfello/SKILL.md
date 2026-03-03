@@ -12,7 +12,7 @@ metadata:
         - name: COINFELLO_BASE_URL
           description: 'Base URL for the CoinFello API server'
           required: false
-          default: 'https://hyp3r-58q8qto10-hyperplay.vercel.app/'
+          default: 'https://app.coinfello.com/'
 ---
 
 # CoinFello CLI Skill
@@ -29,7 +29,7 @@ The CLI is available via `npx @coinfello/agent-cli`. No manual build step is req
 
 | Variable             | Required | Default                                         | Description                    |
 | -------------------- | -------- | ----------------------------------------------- | ------------------------------ |
-| `COINFELLO_BASE_URL` | No       | `https://hyp3r-58q8qto10-hyperplay.vercel.app/` | Base URL for the CoinFello API |
+| `COINFELLO_BASE_URL` | No       | `https://app.coinfello.com/` | Base URL for the CoinFello API |
 
 ## Security Notice
 

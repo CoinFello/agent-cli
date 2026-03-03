@@ -61,9 +61,9 @@ npx @coinfello/agent-cli sign_in [--base-url <url>]
 
 | Parameter    | Type     | Required | Default                         | Description                                                                                            |
 | ------------ | -------- | -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `--base-url` | `string` | No       | `${COINFELLO_BASE_URL}api/auth` | Auth server base URL. `COINFELLO_BASE_URL` defaults to `https://hyp3r-58q8qto10-hyperplay.vercel.app/` |
+| `--base-url` | `string` | No       | `${COINFELLO_BASE_URL}api/auth` | Auth server base URL. `COINFELLO_BASE_URL` defaults to `https://app.coinfello.com/` |
 
-The default resolves using the `COINFELLO_BASE_URL` environment variable (defaults to `https://hyp3r-58q8qto10-hyperplay.vercel.app/`).
+The default resolves using the `COINFELLO_BASE_URL` environment variable (defaults to `https://app.coinfello.com/`).
 
 Performs a Sign-In with Ethereum (SIWE) flow using the private key from config. Saves the `session_token` to config on success. The session token is automatically injected as a cookie for subsequent API calls.
 
@@ -118,7 +118,7 @@ Any chain exported by `viem/chains`. Common examples:
 
 ## API Endpoints
 
-Base URL: Configured via the `COINFELLO_BASE_URL` environment variable (defaults to `https://hyp3r-58q8qto10-hyperplay.vercel.app/`).
+Base URL: Configured via the `COINFELLO_BASE_URL` environment variable (defaults to `https://app.coinfello.com/`).
 
 | Endpoint                                 | Method | Description                                          |
 | ---------------------------------------- | ------ | ---------------------------------------------------- |
@@ -224,7 +224,7 @@ All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC 
 
 | Variable             | Required | Default                                         | Description                    |
 | -------------------- | -------- | ----------------------------------------------- | ------------------------------ |
-| `COINFELLO_BASE_URL` | No       | `https://hyp3r-58q8qto10-hyperplay.vercel.app/` | Base URL for the CoinFello API |
+| `COINFELLO_BASE_URL` | No       | `https://app.coinfello.com/` | Base URL for the CoinFello API |
 
 ## Security Considerations
 
