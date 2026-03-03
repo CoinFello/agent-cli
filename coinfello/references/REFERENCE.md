@@ -59,8 +59,8 @@ No parameters. Prints the stored smart account address from config. Exits with a
 npx @coinfello/agent-cli sign_in [--base-url <url>]
 ```
 
-| Parameter    | Type     | Required | Default                         | Description                                                                                            |
-| ------------ | -------- | -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Parameter    | Type     | Required | Default                         | Description                                                                         |
+| ------------ | -------- | -------- | ------------------------------- | ----------------------------------------------------------------------------------- |
 | `--base-url` | `string` | No       | `${COINFELLO_BASE_URL}api/auth` | Auth server base URL. `COINFELLO_BASE_URL` defaults to `https://app.coinfello.com/` |
 
 The default resolves using the `COINFELLO_BASE_URL` environment variable (defaults to `https://app.coinfello.com/`).
@@ -222,8 +222,8 @@ All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC 
 
 ## Environment Variables
 
-| Variable             | Required | Default                                         | Description                    |
-| -------------------- | -------- | ----------------------------------------------- | ------------------------------ |
+| Variable             | Required | Default                      | Description                    |
+| -------------------- | -------- | ---------------------------- | ------------------------------ |
 | `COINFELLO_BASE_URL` | No       | `https://app.coinfello.com/` | Base URL for the CoinFello API |
 
 ## Security Considerations
