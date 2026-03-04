@@ -14,8 +14,9 @@
     "access": "public"
   },
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && pnpm run build:swift",
     "build:swift": "bash swift/SecureEnclaveSigner/build.sh",
+    "build:signed": "vite build && SIGN_IDENTITY=\"Apple Development: Brett Cleary (WF45KCA35Q)\" PROVISIONING_PROFILE=\"$HOME/Agent_Cli_Dev_Profile_1.provisionprofile\" pnpm run build:swift",
     "codecheck": "tsc --noEmit",
     "lint": "eslint src",
     "prettier-fix": "prettier --write src coinfello",

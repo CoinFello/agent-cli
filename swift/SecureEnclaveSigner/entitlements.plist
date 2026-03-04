@@ -2,12 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <!-- Required for storing Secure Enclave keys in the macOS keychain.
-         $(AppIdentifierPrefix) is substituted with your Team ID (e.g. ABCDE12345.)
-         when signing with a Developer ID certificate. -->
+    <key>com.apple.application-identifier</key>
+    <string>RTGU82X53W.com.coinfello.agent-cli</string>
+    <key>com.apple.developer.team-identifier</key>
+    <string>RTGU82X53W</string>
     <key>keychain-access-groups</key>
     <array>
-        <string>$(AppIdentifierPrefix)com.coinfello.agent-cli</string>
+        <string>RTGU82X53W.com.coinfello.agent-cli</string>
     </array>
 </dict>
 </plist>

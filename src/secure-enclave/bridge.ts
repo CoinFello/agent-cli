@@ -22,20 +22,10 @@ export interface SecureEnclaveSignature {
 }
 
 function getBinaryPath(): string {
-  // In production (dist/index.js), the binary is at dist/secure-enclave-signer
-  // In dev, fall back to the swift build output
-  const distPath = join(__dirname, '../../dist', 'secure-enclave-signer')
-  const devPath = join(
-    __dirname,
-    '..',
-    'swift',
-    'SecureEnclaveSigner',
-    '.build',
-    'release',
-    'SecureEnclaveSigner'
-  )
-  // Prefer dist path, caller should ensure it exists
-  return distPath
+  // The binary lives inside a .app bundle so macOS AMFI can find the
+  // embedded provisioning profile for keychain-access-groups entitlements.
+  // When running from dist/index.js, __dirname is the dist/ directory.
+  return join(__dirname, 'secure-enclave-signer.app', 'Contents', 'MacOS', 'secure-enclave-signer')
 }
 
 export function isSecureEnclaveAvailable(): boolean {
