@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { describe, it, expect, beforeAll } from "vitest";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { type Hex, createWalletClient, http, parseEther } from "viem";
+import { type Hex, createPublicClient, createWalletClient, formatEther, http, parseEther } from "viem";
 import { baseSepolia } from "viem/chains";
 import { createSmartAccount } from "../../src/account.js";
 import { signInWithAgent } from "../../src/siwe.js";
@@ -47,6 +47,14 @@ describe("send_prompt CLI end-to-end", () => {
     // Fund the smart account with 0.002 Base Sepolia ETH
     const fundingKey = process.env.PRIVATE_KEY as Hex;
     const fundingAccount = privateKeyToAccount(fundingKey);
+    const publicClient = createPublicClient({
+      chain: baseSepolia,
+      transport: http(),
+    });
+    const balance = await publicClient.getBalance({ address: fundingAccount.address });
+    console.log(`Funding account: ${fundingAccount.address}`);
+    console.log(`Funding account balance: ${formatEther(balance)} ETH`);
+
     const walletClient = createWalletClient({
       account: fundingAccount,
       chain: baseSepolia,
@@ -79,7 +87,7 @@ describe("send_prompt CLI end-to-end", () => {
   it("completes the delegation flow when asked to send ETH via the CLI", async () => {
     const { stdout, stderr} = await runCli([
       "send_prompt",
-      "send 0.0001 ETH on Base Sepolia to 0x000000000000000000000000000000000000dEaD. call ask_for_delegation",
+      "send 0.0001 ETH on Base Sepolia to 0x000000000000000000000000000000000000dEaD",
     ]);
 
     console.log(stdout)
@@ -93,7 +101,7 @@ describe("send_prompt CLI end-to-end", () => {
 
     const { stdout: stdout2, stderr: stderr2} = await runCli([
       "send_prompt",
-      "send 0.0001 ETH on Base Sepolia to 0x000000000000000000000000000000000000dEaD. call ask_for_delegation",
+      "send 0.0001 ETH on Base Sepolia to 0x000000000000000000000000000000000000dEaD",
     ]);
 
     console.log(stdout2)
