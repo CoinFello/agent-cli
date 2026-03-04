@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:agent-cli}/swift/SecureEnclaveSigner",
+            "name": "Debug SecureEnclaveSigner (swift/SecureEnclaveSigner)",
+            "target": "SecureEnclaveSigner",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug SecureEnclaveSigner (swift/SecureEnclaveSigner)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:agent-cli}/swift/SecureEnclaveSigner",
+            "name": "Release SecureEnclaveSigner (swift/SecureEnclaveSigner)",
+            "target": "SecureEnclaveSigner",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release SecureEnclaveSigner (swift/SecureEnclaveSigner)"
+        }
+    ]
+}

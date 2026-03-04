@@ -1,7 +1,8 @@
 import { createSiweMessage } from 'viem/siwe'
 import { type Hex, type Address } from 'viem'
 import { Config, saveConfig } from './config.js'
-import { createSmartAccount, resolveChain } from './account.js'
+import { createSmartAccount, getSmartAccountFromSecureEnclave, resolveChain } from './account.js'
+import type { HybridSmartAccount } from './account.js'
 import { fetchWithCookies, cookieJar } from './cookies.js'
 
 export interface SignInResult {
@@ -15,21 +16,36 @@ export interface SignInResult {
 }
 
 export async function signInWithAgent(baseUrl: string, config: Config): Promise<SignInResult> {
-  if (!config.private_key) {
-    throw new Error("No private key found in config. Run 'create_account' first.")
-  }
   if (!config.smart_account_address) {
     throw new Error("No smart account address found in config. Run 'create_account' first.")
   }
   if (!config.chain) {
     throw new Error("No chain found in config. Run 'create_account' first.")
   }
+  if (config.signer_type !== 'secureEnclave' && !config.private_key) {
+    throw new Error("No private key found in config. Run 'create_account' first.")
+  }
 
   const chain = resolveChain(config.chain)
   const chainId = chain.id
   const walletAddress = config.smart_account_address
 
-  const { smartAccount } = await createSmartAccount(config.private_key as Hex, config.chain)
+  let smartAccount: HybridSmartAccount
+  if (config.signer_type === 'secureEnclave') {
+    if (!config.secure_enclave) {
+      throw new Error("Secure Enclave config missing. Run 'create_account --secure-enclave' first.")
+    }
+    smartAccount = await getSmartAccountFromSecureEnclave(
+      config.secure_enclave.key_tag,
+      config.secure_enclave.public_key_x,
+      config.secure_enclave.public_key_y,
+      config.secure_enclave.key_id as Hex,
+      config.chain
+    )
+  } else {
+    const result = await createSmartAccount(config.private_key as Hex, config.chain)
+    smartAccount = result.smartAccount
+  }
 
   // Extract domain info from baseUrl
   const url = new URL(baseUrl)

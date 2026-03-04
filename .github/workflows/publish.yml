@@ -5,11 +5,96 @@ on:
     branches: [main]
 
 jobs:
+  # ── Job 1: Build & sign the Swift binary on macOS ──────────────
+  build-swift:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Apple certificate
+        env:
+          APPLE_CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
+          echo -n "$APPLE_CERTIFICATE_P12" | base64 --decode -o $CERTIFICATE_PATH
+
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -hex 24)
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          security import $CERTIFICATE_PATH \
+            -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 \
+            -k $KEYCHAIN_PATH
+
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" \
+            $KEYCHAIN_PATH
+
+          security list-keychains -d user -s $KEYCHAIN_PATH $(security list-keychains -d user | tr -d '"')
+
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
+
+      - name: Install provisioning profile
+        env:
+          APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
+        run: |
+          PROFILE_PATH=$RUNNER_TEMP/embedded.provisionprofile
+          echo -n "$APPLE_PROVISIONING_PROFILE" | base64 --decode -o $PROFILE_PATH
+          echo "PROVISIONING_PROFILE=$PROFILE_PATH" >> $GITHUB_ENV
+
+      - name: Build and sign Swift binary
+        env:
+          SIGN_IDENTITY: "Developer ID Application: HyperPlay Labs Inc (RTGU82X53W)"
+        run: |
+          mkdir -p dist
+          bash swift/SecureEnclaveSigner/build.sh
+
+      - name: Verify code signature
+        run: |
+          codesign --verify --deep --strict dist/secure-enclave-signer.app
+          codesign -dvv dist/secure-enclave-signer.app
+
+      - name: Notarize
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          ditto -c -k --keepParent dist/secure-enclave-signer.app \
+            $RUNNER_TEMP/secure-enclave-signer.zip
+
+          xcrun notarytool submit $RUNNER_TEMP/secure-enclave-signer.zip \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+
+          xcrun stapler staple dist/secure-enclave-signer.app
+
+      - name: Upload signed binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-swift-binary
+          path: dist/secure-enclave-signer.app
+          retention-days: 1
+
+      - name: Cleanup keychain
+        if: always()
+        run: security delete-keychain $KEYCHAIN_PATH 2>/dev/null || true
+
+  # ── Job 2: Build JS + publish npm package ──────────────────────
   publish:
+    needs: build-swift
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write  # enables npm provenance
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -30,8 +115,19 @@ jobs:
       - name: Typecheck
         run: pnpm codecheck
 
-      - name: Build
-        run: pnpm build
+      - name: Build JS bundle
+        run: pnpm exec vite build
+
+      - name: Download signed binary
+        uses: actions/download-artifact@v4
+        with:
+          name: signed-swift-binary
+          path: dist/secure-enclave-signer.app
+
+      - name: Create binary symlink
+        run: |
+          ln -sf secure-enclave-signer.app/Contents/MacOS/secure-enclave-signer \
+            dist/secure-enclave-signer
 
       - name: Check if version is already published
         id: version_check

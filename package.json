@@ -1,6 +1,6 @@
 {
   "name": "@coinfello/agent-cli",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "",
   "type": "module",
   "main": "dist/index.js",
@@ -14,8 +14,9 @@
     "access": "public"
   },
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && pnpm run build:swift",
     "build:swift": "bash swift/SecureEnclaveSigner/build.sh",
+    "build:signed": "vite build && SIGN_IDENTITY=\"Apple Development: Brett Cleary (WF45KCA35Q)\" PROVISIONING_PROFILE=\"$HOME/Agent_Cli_Dev_Profile_1.provisionprofile\" pnpm run build:swift",
     "codecheck": "tsc --noEmit",
     "lint": "eslint src",
     "prettier-fix": "prettier --write src coinfello",
@@ -34,6 +35,8 @@
     "viem": "^2.45.1"
   },
   "devDependencies": {
+    "@noble/curves": "^2.0.1",
+    "@noble/hashes": "^2.0.1",
     "@types/node": "^25.2.1",
     "dotenv": "^17.3.1",
     "eslint": "^10.0.0",
