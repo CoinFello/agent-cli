@@ -84,7 +84,7 @@ describe("send_prompt CLI end-to-end", () => {
     });
     await baseWalletClient.sendTransaction({
       to: address as Hex,
-      value: parseEther("0.002"),
+      value: parseEther("0.00000002"),
     });
 
     const config = {
@@ -155,7 +155,7 @@ describe("send_prompt CLI end-to-end", () => {
 
     const { stdout, stderr } = await runCli([
       "send_prompt",
-      "Swap 0.0001 ETH for USDC on base",
+      "Swap 0.00000001 ETH for USDC on base",
     ]);
 
     console.log(stdout);
@@ -170,6 +170,6 @@ describe("send_prompt CLI end-to-end", () => {
     const balanceAfter = await basePublicClient.getBalance({ address: smartAccountAddress });
     console.log(`Smart account Base mainnet balance after swap: ${formatEther(balanceAfter)} ETH`);
     expect(balanceAfter).toBeLessThan(balanceBefore);
-    expect(balanceBefore - balanceAfter).toBeGreaterThanOrEqual(parseEther("0.0001"));
+    expect(balanceBefore - balanceAfter).toBeGreaterThanOrEqual(parseEther("0.00000001"));
   });
 });
