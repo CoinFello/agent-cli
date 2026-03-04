@@ -37,14 +37,15 @@ program
   .command('create_account')
   .description('Create a MetaMask smart account and save its address to local config')
   .argument('<chain>', 'Chain name (e.g. sepolia, mainnet, polygon, arbitrum)')
-  .option('--secure-enclave', 'Use macOS Secure Enclave P256 key (macOS only)')
-  .action(async (chain: string, opts: { secureEnclave?: boolean }) => {
+  .option(
+    '--use-unsafe-private-key',
+    'Use a raw private key instead of hardware-backed key (Secure Enclave / TPM 2.0)'
+  )
+  .action(async (chain: string, opts: { useUnsafePrivateKey?: boolean }) => {
     try {
-      if (opts.secureEnclave) {
-        if (!isSecureEnclaveAvailable()) {
-          console.error('Error: Secure Enclave is only available on macOS.')
-          process.exit(1)
-        }
+      const useHardwareKey = !opts.useUnsafePrivateKey && isSecureEnclaveAvailable()
+
+      if (useHardwareKey) {
         console.log(`Creating Secure Enclave-backed smart account on ${chain}...`)
         const { address, keyTag, publicKeyX, publicKeyY, keyId } =
           await createSmartAccountWithSecureEnclave(chain)
@@ -67,6 +68,11 @@ program
         console.log(`Key tag: ${keyTag}`)
         console.log(`Config saved to: ${CONFIG_PATH}`)
       } else {
+        if (!opts.useUnsafePrivateKey) {
+          console.warn(
+            'Warning: No hardware key support detected. Falling back to raw private key.'
+          )
+        }
         console.log(`Creating smart account on ${chain}...`)
         const privateKey = generatePrivateKey()
         const { address } = await createSmartAccount(privateKey, chain)
@@ -220,9 +226,7 @@ program
       let smartAccount: HybridSmartAccount
       if (config.signer_type === 'secureEnclave') {
         if (!config.secure_enclave) {
-          console.error(
-            "Error: Secure Enclave config missing. Run 'create_account --secure-enclave' first."
-          )
+          console.error("Error: Secure Enclave config missing. Run 'create_account' first.")
           process.exit(1)
         }
         smartAccount = await getSmartAccountFromSecureEnclave(
