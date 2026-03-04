@@ -2,7 +2,7 @@ import "dotenv/config";
 import { describe, it, expect, beforeAll } from "vitest";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { type Hex, createPublicClient, createWalletClient, formatEther, http, parseEther } from "viem";
-import { baseSepolia } from "viem/chains";
+import { base, baseSepolia } from "viem/chains";
 import { createSmartAccount } from "../../src/account.js";
 import { signInWithAgent } from "../../src/siwe.js";
 import { BASE_URL } from "../../src/api.js";
@@ -39,21 +39,29 @@ function runCli(
   });
 }
 
+const sepoliaPublicClient = createPublicClient({
+  chain: baseSepolia,
+  transport: http(),
+});
+const basePublicClient = createPublicClient({
+  chain: base,
+  transport: http(),
+});
+
 describe("send_prompt CLI end-to-end", () => {
+  let smartAccountAddress: Hex;
+
   beforeAll(async () => {
     const privateKey = generatePrivateKey();
     const { address } = await createSmartAccount(privateKey, CHAIN);
+    smartAccountAddress = address as Hex;
 
     // Fund the smart account with 0.002 Base Sepolia ETH
     const fundingKey = process.env.PRIVATE_KEY as Hex;
     const fundingAccount = privateKeyToAccount(fundingKey);
-    const publicClient = createPublicClient({
-      chain: baseSepolia,
-      transport: http(),
-    });
-    const balance = await publicClient.getBalance({ address: fundingAccount.address });
+    const balance = await sepoliaPublicClient.getBalance({ address: fundingAccount.address });
     console.log(`Funding account: ${fundingAccount.address}`);
-    console.log(`Funding account balance: ${formatEther(balance)} ETH`);
+    console.log(`Funding account Base Sepolia balance: ${formatEther(balance)} ETH`);
 
     const walletClient = createWalletClient({
       account: fundingAccount,
@@ -61,6 +69,20 @@ describe("send_prompt CLI end-to-end", () => {
       transport: http(),
     });
     await walletClient.sendTransaction({
+      to: address as Hex,
+      value: parseEther("0.002"),
+    });
+
+    // Fund the smart account on Base mainnet (swaps only work on real Base)
+    const baseBalance = await basePublicClient.getBalance({ address: fundingAccount.address });
+    console.log(`Funding account Base mainnet balance: ${formatEther(baseBalance)} ETH`);
+
+    const baseWalletClient = createWalletClient({
+      account: fundingAccount,
+      chain: base,
+      transport: http(),
+    });
+    await baseWalletClient.sendTransaction({
       to: address as Hex,
       value: parseEther("0.002"),
     });
@@ -85,6 +107,9 @@ describe("send_prompt CLI end-to-end", () => {
   });
 
   it("completes the delegation flow when asked to send ETH via the CLI", async () => {
+    const balanceBefore = await sepoliaPublicClient.getBalance({ address: smartAccountAddress });
+    console.log(`Smart account Base Sepolia balance before send: ${formatEther(balanceBefore)} ETH`);
+
     const { stdout, stderr} = await runCli([
       "send_prompt",
       "send 0.0001 ETH on Base Sepolia to 0x000000000000000000000000000000000000dEaD",
@@ -99,6 +124,11 @@ describe("send_prompt CLI end-to-end", () => {
     expect(stdout).toContain("Signing subdelegation...");
     expect(stdout).toContain("Sending signed delegation...");
 
+    const balanceAfterFirst = await sepoliaPublicClient.getBalance({ address: smartAccountAddress });
+    console.log(`Smart account Base Sepolia balance after first send: ${formatEther(balanceAfterFirst)} ETH`);
+    expect(balanceAfterFirst).toBeLessThan(balanceBefore);
+    expect(balanceBefore - balanceAfterFirst).toBeGreaterThanOrEqual(parseEther("0.0001"));
+
     const { stdout: stdout2, stderr: stderr2} = await runCli([
       "send_prompt",
       "send 0.0001 ETH on Base Sepolia to 0x000000000000000000000000000000000000dEaD",
@@ -112,5 +142,34 @@ describe("send_prompt CLI end-to-end", () => {
     expect(stdout).toContain("Creating subdelegation...");
     expect(stdout).toContain("Signing subdelegation...");
     expect(stdout).toContain("Sending signed delegation...");
+
+    const balanceAfter = await sepoliaPublicClient.getBalance({ address: smartAccountAddress });
+    console.log(`Smart account Base Sepolia balance after send: ${formatEther(balanceAfter)} ETH`);
+    expect(balanceAfter).toBeLessThan(balanceBefore);
+    expect(balanceBefore - balanceAfter).toBeGreaterThanOrEqual(parseEther("0.0002"));
+  });
+
+  it("completes the delegation flow when asked to swap ETH for USDC via the CLI", async () => {
+    const balanceBefore = await basePublicClient.getBalance({ address: smartAccountAddress });
+    console.log(`Smart account Base mainnet balance before swap: ${formatEther(balanceBefore)} ETH`);
+
+    const { stdout, stderr } = await runCli([
+      "send_prompt",
+      "Swap 0.0001 ETH for USDC on base",
+    ]);
+
+    console.log(stdout);
+    console.error(stderr);
+
+    expect(stdout).toContain("Sending prompt...");
+    expect(stdout).toContain("Delegation requested");
+    expect(stdout).toContain("Creating subdelegation...");
+    expect(stdout).toContain("Signing subdelegation...");
+    expect(stdout).toContain("Sending signed delegation...");
+
+    const balanceAfter = await basePublicClient.getBalance({ address: smartAccountAddress });
+    console.log(`Smart account Base mainnet balance after swap: ${formatEther(balanceAfter)} ETH`);
+    expect(balanceAfter).toBeLessThan(balanceBefore);
+    expect(balanceBefore - balanceAfter).toBeGreaterThanOrEqual(parseEther("0.0001"));
   });
 });
