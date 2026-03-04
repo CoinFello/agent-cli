@@ -84,12 +84,14 @@ jobs:
             exit 1
           fi
 
-          # Wait with a 30-minute timeout
-          timeout 1800 xcrun notarytool wait "$ID" \
-            --apple-id "$APPLE_ID" \
-            --password "$APPLE_APP_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" || {
+          # Wait with a 30-minute timeout (macOS lacks GNU timeout)
+          perl -e 'alarm 1800; exec @ARGV' \
+            xcrun notarytool wait "$ID" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" || {
             echo "::error::Notarization timed out or failed. Fetching log..."
+            sleep 10
             xcrun notarytool log "$ID" \
               --apple-id "$APPLE_ID" \
               --password "$APPLE_APP_PASSWORD" \
