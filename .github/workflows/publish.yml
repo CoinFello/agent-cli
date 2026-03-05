@@ -60,47 +60,6 @@ jobs:
           codesign --verify --deep --strict dist/secure-enclave-signer.app
           codesign -dvv dist/secure-enclave-signer.app
 
-      - name: Notarize
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          ditto -c -k --keepParent dist/secure-enclave-signer.app \
-            $RUNNER_TEMP/secure-enclave-signer.zip
-
-          # Submit and capture the submission ID
-          RESULT=$(xcrun notarytool submit $RUNNER_TEMP/secure-enclave-signer.zip \
-            --apple-id "$APPLE_ID" \
-            --password "$APPLE_APP_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" \
-            --output-format json)
-
-          echo "$RESULT"
-          ID=$(echo "$RESULT" | jq -r '.id')
-
-          if [ -z "$ID" ] || [ "$ID" = "null" ]; then
-            echo "::error::Notarization submission failed — no submission ID returned"
-            exit 1
-          fi
-
-          # Wait with a 30-minute timeout (macOS lacks GNU timeout)
-          perl -e 'alarm 1800; exec @ARGV' \
-            xcrun notarytool wait "$ID" \
-              --apple-id "$APPLE_ID" \
-              --password "$APPLE_APP_PASSWORD" \
-              --team-id "$APPLE_TEAM_ID" || {
-            echo "::error::Notarization timed out or failed. Fetching log..."
-            sleep 10
-            xcrun notarytool log "$ID" \
-              --apple-id "$APPLE_ID" \
-              --password "$APPLE_APP_PASSWORD" \
-              --team-id "$APPLE_TEAM_ID" || true
-            exit 1
-          }
-
-          xcrun stapler staple dist/secure-enclave-signer.app
-
       - name: Upload signed binary
         uses: actions/upload-artifact@v4
         with:
