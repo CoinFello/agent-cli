@@ -14,6 +14,7 @@ export interface RawScope {
   tokenId?: string
   targets?: string[]
   selectors?: string[]
+  valueLte?: { maxValue: string }
 }
 
 export function parseScope(raw: RawScope): DelegationScope {
@@ -79,6 +80,9 @@ export function parseScope(raw: RawScope): DelegationScope {
         type: 'functionCall',
         targets: (raw.targets ?? []).map((t) => t as Hex),
         selectors: (raw.selectors ?? []).map((s) => s as Hex),
+        ...(raw.valueLte?.maxValue
+          ? { valueLte: { maxValue: BigInt(raw.valueLte.maxValue) } }
+          : {}),
       }
 
     default:
