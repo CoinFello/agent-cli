@@ -294,12 +294,8 @@ program
 
       // 8. Send signed delegation back to conversation endpoint
       console.log('Sending signed delegation...')
-      const turn2Message =
-        `The delegation has been signed and approved. ` +
-        `Call redeem_delegation_lifi_swap` +
-        `The swap transaction data is already cached on the server from prepare_lifi_swap.`
       const finalResponse = await sendConversation({
-        prompt: turn2Message,
+        prompt: 'Please refer to the previous conversation messages and redeem this delegation.',
         signedSubdelegation,
         chatId: initialResponse.chatId,
         delegationArguments: JSON.stringify(args),
