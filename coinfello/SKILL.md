@@ -167,9 +167,9 @@ npx @coinfello/agent-cli send_prompt "what is the chain ID for Base?"
 
 Actual on-chain gas costs vary by network. Do **not** assume mainnet Ethereum gas prices for L2 chains.
 
-| Network  | Swap / Transfer Gas Cost |
-| -------- | ------------------------ |
-| Base     | $0.0003 – $0.0006        |
+| Network | Swap / Transfer Gas Cost |
+| ------- | ------------------------ |
+| Base    | $0.0003 – $0.0006        |
 
 These are approximate ranges under normal network conditions. L2s like Base are significantly cheaper than Ethereum mainnet.
 
