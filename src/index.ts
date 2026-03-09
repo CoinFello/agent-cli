@@ -12,7 +12,6 @@ import { loadConfig, saveConfig, CONFIG_PATH } from './config.js'
 import {
   getCoinFelloAddress,
   sendConversation,
-  getTransactionStatus,
   BASE_URL_V1,
   BASE_URL,
 } from './api.js'
