@@ -45,4 +45,5 @@ jobs:
             --slug coinfello \
             --name "CoinFello" \
             --version "$VERSION" \
-            --changelog "$CHANGELOG"
+            --changelog "$CHANGELOG" \
+            --acceptLicenseTerms
