@@ -46,4 +46,4 @@ jobs:
             --name "CoinFello" \
             --version "$VERSION" \
             --changelog "$CHANGELOG" \
-            --acceptLicenseTerms
+            --accept-license-terms
