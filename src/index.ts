@@ -9,12 +9,7 @@ import {
   type HybridSmartAccount,
 } from './account.js'
 import { loadConfig, saveConfig, CONFIG_PATH } from './config.js'
-import {
-  getCoinFelloAddress,
-  sendConversation,
-  BASE_URL_V1,
-  BASE_URL,
-} from './api.js'
+import { getCoinFelloAddress, sendConversation, BASE_URL_V1, BASE_URL } from './api.js'
 import { loadSessionToken } from './cookies.js'
 import { signInWithAgent } from './siwe.js'
 import { parseScope } from './scope.js'
