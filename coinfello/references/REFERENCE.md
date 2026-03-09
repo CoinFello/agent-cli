@@ -4,46 +4,67 @@
 
 Location: `~/.clawdbot/skills/coinfello/config.json`
 
-Created automatically by `create_account`. Schema:
+Created automatically by `create_account`. The schema depends on the signer type.
+
+**Default (Secure Enclave):**
 
 ```json
 {
+  "signer_type": "secureEnclave",
+  "smart_account_address": "0x1234...abcd",
+  "chain": "sepolia",
+  "secure_enclave": {
+    "key_tag": "...",
+    "public_key_x": "0x...",
+    "public_key_y": "0x...",
+    "key_id": "0x..."
+  },
+  "session_token": "...",
+  "delegation": { ... }
+}
+```
+
+**With `--use-unsafe-private-key` (development/testing only):**
+
+```json
+{
+  "signer_type": "privateKey",
   "private_key": "0xabc123...def",
   "smart_account_address": "0x1234...abcd",
   "chain": "sepolia",
   "session_token": "...",
-  "delegation": {
-    "delegate": "0x...",
-    "delegator": "0x...",
-    "authority": "0x...",
-    "caveats": [],
-    "salt": "0x...",
-    "signature": "0x..."
-  }
+  "delegation": { ... }
 }
 ```
 
-| Field                   | Type     | Set by           | Description                                    |
-| ----------------------- | -------- | ---------------- | ---------------------------------------------- |
-| `private_key`           | `string` | `create_account` | Auto-generated hex private key                 |
-| `smart_account_address` | `string` | `create_account` | Counterfactual address of the smart account    |
-| `chain`                 | `string` | `create_account` | viem chain name used for account creation      |
-| `session_token`         | `string` | `sign_in`        | SIWE session token for authenticated API calls |
-| `delegation`            | `object` | `set_delegation` | Optional stored delegation                     |
+| Field                         | Type     | Set by           | Description                                                                                         |
+| ----------------------------- | -------- | ---------------- | --------------------------------------------------------------------------------------------------- |
+| `signer_type`                 | `string` | `create_account` | `"secureEnclave"` (default) or `"privateKey"` (with `--use-unsafe-private-key`)                     |
+| `smart_account_address`       | `string` | `create_account` | Counterfactual address of the smart account                                                         |
+| `chain`                       | `string` | `create_account` | viem chain name used for account creation                                                           |
+| `secure_enclave.key_tag`      | `string` | `create_account` | Secure Enclave key tag (only with `secureEnclave` signer)                                           |
+| `secure_enclave.public_key_x` | `string` | `create_account` | P256 public key X coordinate (only with `secureEnclave` signer)                                     |
+| `secure_enclave.public_key_y` | `string` | `create_account` | P256 public key Y coordinate (only with `secureEnclave` signer)                                     |
+| `secure_enclave.key_id`       | `string` | `create_account` | On-chain key identifier (only with `secureEnclave` signer)                                          |
+| `private_key`                 | `string` | `create_account` | Plaintext hex private key (**only** with `--use-unsafe-private-key`, absent in Secure Enclave mode) |
+| `session_token`               | `string` | `sign_in`        | SIWE session token for authenticated API calls                                                      |
+| `delegation`                  | `object` | `set_delegation` | Optional stored delegation                                                                          |
 
 ## Command Reference
 
 ### npx @coinfello/agent-cli create_account
 
 ```
-npx @coinfello/agent-cli create_account <chain>
+npx @coinfello/agent-cli create_account <chain> [--use-unsafe-private-key] [--delete-existing-private-key]
 ```
 
-| Parameter | Type     | Required | Description                 |
-| --------- | -------- | -------- | --------------------------- |
-| `chain`   | `string` | Yes      | viem chain name (see below) |
+| Parameter                       | Type     | Required | Description                                                                |
+| ------------------------------- | -------- | -------- | -------------------------------------------------------------------------- |
+| `chain`                         | `string` | Yes      | viem chain name (see below)                                                |
+| `--use-unsafe-private-key`      | flag     | No       | Use a plaintext software key instead of hardware-backed Secure Enclave key |
+| `--delete-existing-private-key` | flag     | No       | Overwrite an existing account                                              |
 
-Generates a new private key automatically and saves it along with the smart account address and chain to config.
+By default, generates a hardware-backed P256 key in the macOS Secure Enclave (the private key never leaves the hardware). If Secure Enclave is unavailable, the CLI warns and falls back to a software key. Pass `--use-unsafe-private-key` to explicitly use a plaintext private key (development/testing only).
 
 ### npx @coinfello/agent-cli get_account
 
@@ -65,7 +86,7 @@ npx @coinfello/agent-cli sign_in [--base-url <url>]
 
 The default resolves using the `COINFELLO_BASE_URL` environment variable (defaults to `https://app.coinfello.com/`).
 
-Performs a Sign-In with Ethereum (SIWE) flow using the private key from config. Saves the `session_token` to config on success. The session token is automatically injected as a cookie for subsequent API calls.
+Performs a Sign-In with Ethereum (SIWE) flow using the signing key from config (Secure Enclave or private key, depending on `signer_type`). Saves the `session_token` to config on success. The session token is automatically injected as a cookie for subsequent API calls.
 
 ### npx @coinfello/agent-cli set_delegation
 
@@ -218,7 +239,7 @@ All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC 
 
 ## Security Considerations
 
-- **Private key storage**: `create_account` generates and stores a private key in plaintext at `~/.clawdbot/skills/coinfello/config.json`. Restrict file permissions (e.g. `chmod 600`) and do not share or commit this file.
+- **Key generation and storage**: By default, `create_account` generates a hardware-backed P256 key in the **macOS Secure Enclave**. The private key never leaves the hardware and cannot be exported — only public key coordinates and a key tag are saved to `~/.clawdbot/skills/coinfello/config.json`. A plaintext private key is **only** stored when `--use-unsafe-private-key` is explicitly passed (intended for development/testing). Restrict file permissions (e.g. `chmod 600`) and do not share or commit this file.
 - **Session token storage**: `sign_in` stores a SIWE session token in the same config file.
 - **Automatic delegation signing**: `send_prompt` may create and sign delegations based on scopes requested by the server, then submit them to the CoinFello API endpoint. Ensure the `COINFELLO_BASE_URL` points to a trusted endpoint before running delegation flows.
 
@@ -227,7 +248,8 @@ All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC 
 | Error                                                         | Cause                               | Fix                                                   |
 | ------------------------------------------------------------- | ----------------------------------- | ----------------------------------------------------- |
 | `Unknown chain "<name>"`                                      | Invalid chain name                  | Use a valid viem chain name                           |
-| `No private key found in config. Run 'create_account' first.` | Missing private key in config       | Run `npx @coinfello/agent-cli create_account <chain>` |
+| `No private key found in config. Run 'create_account' first.` | Missing signing key in config       | Run `npx @coinfello/agent-cli create_account <chain>` |
+| `Secure Enclave config missing. Run 'create_account' first.`  | Missing Secure Enclave key data     | Run `npx @coinfello/agent-cli create_account <chain>` |
 | `No smart account found. Run 'create_account' first.`         | Missing smart account in config     | Run `npx @coinfello/agent-cli create_account <chain>` |
 | `No chain found in config. Run 'create_account' first.`       | Missing chain in config             | Run `npx @coinfello/agent-cli create_account <chain>` |
 | `No delegation request received from the server.`             | Server returned unexpected response | Check the full response JSON printed                  |
