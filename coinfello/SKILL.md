@@ -183,5 +183,3 @@ These are approximate ranges under normal network conditions. L2s like Base are 
 ## Reference
 
 See [references/REFERENCE.md](references/REFERENCE.md) for the full config schema, supported chains, API details, scope types, and troubleshooting.
-
-See [scripts/setup-and-send.sh](scripts/setup-and-send.sh) for an end-to-end automation script.
