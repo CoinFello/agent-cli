@@ -8,10 +8,11 @@ import {
 } from '@metamask/smart-accounts-kit'
 import { PrivateKeyAccount, privateKeyToAccount } from 'viem/accounts'
 import { toWebAuthnAccount } from 'viem/account-abstraction'
-import { createPublicClient, http, type Hex, type Chain } from 'viem'
+import { type Hex, type Chain } from 'viem'
 import * as chains from 'viem/chains'
 import { randomBytes } from 'node:crypto'
 import { generateKey, createSecureEnclaveGetFn } from './secure-enclave/index.js'
+import { createPublicClient } from './services/createPublicClient.js'
 
 export type HybridSmartAccount = ToMetaMaskSmartAccountReturnType<Implementation.Hybrid>
 export type DelegationScope = CreateDelegationOptions['scope']
@@ -48,11 +49,7 @@ export async function createSmartAccount(
   chainInput: string | number
 ): Promise<{ smartAccount: HybridSmartAccount; address: string; owner: PrivateKeyAccount }> {
   const chain = resolveChainInput(chainInput)
-
-  const publicClient = createPublicClient({
-    chain,
-    transport: http(),
-  })
+  const publicClient = createPublicClient(chain)
 
   const owner = privateKeyToAccount(privateKey)
 
@@ -108,7 +105,7 @@ export async function createSmartAccountWithSecureEnclave(chainInput: string | n
   keyId: Hex
 }> {
   const chain = resolveChainInput(chainInput)
-  const publicClient = createPublicClient({ chain, transport: http() })
+  const publicClient = createPublicClient(chain)
 
   // Generate P256 key in Secure Enclave
   const keyPair = await generateKey()
@@ -165,7 +162,7 @@ export async function getSmartAccountFromSecureEnclave(
   chainInput: string | number
 ): Promise<HybridSmartAccount> {
   const chain = resolveChainInput(chainInput)
-  const publicClient = createPublicClient({ chain, transport: http() })
+  const publicClient = createPublicClient(chain)
 
   const xBigInt = BigInt(publicKeyX)
   const yBigInt = BigInt(publicKeyY)

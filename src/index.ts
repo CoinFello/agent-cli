@@ -13,7 +13,8 @@ import { getCoinFelloAddress, sendConversation, BASE_URL_V1, BASE_URL } from './
 import { loadSessionToken } from './cookies.js'
 import { signInWithAgent } from './siwe.js'
 import { parseScope } from './scope.js'
-import { createPublicClient, http, serializeErc6492Signature, type Hex } from 'viem'
+import { serializeErc6492Signature, type Hex } from 'viem'
+import { createPublicClient } from './services/createPublicClient.js'
 import { generatePrivateKey } from 'viem/accounts'
 import type { Delegation } from '@metamask/smart-accounts-kit'
 import { SignedSubdelegation } from './types.js'
@@ -61,7 +62,6 @@ program
           const { address, keyTag, publicKeyX, publicKeyY, keyId } =
             await createSmartAccountWithSecureEnclave(chain)
 
-          const config = await loadConfig()
           config.signer_type = 'secureEnclave'
           config.smart_account_address = address
           config.chain = chain
@@ -88,7 +88,6 @@ program
           const privateKey = generatePrivateKey()
           const { address } = await createSmartAccount(privateKey, chain)
 
-          const config = await loadConfig()
           config.private_key = privateKey
           config.signer_type = 'privateKey'
           config.smart_account_address = address
@@ -269,10 +268,7 @@ program
       let sig = signature
       const chain = resolveChainInput(config.chain)
 
-      const publicClient = createPublicClient({
-        chain,
-        transport: http(),
-      })
+      const publicClient = createPublicClient(chain)
       const code = await publicClient.getCode({ address: smartAccount.address })
       const isDeployed = !!(code && code !== '0x')
       if (!isDeployed) {
