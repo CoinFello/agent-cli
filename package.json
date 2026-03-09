@@ -1,6 +1,6 @@
 {
   "name": "@coinfello/agent-cli",
-  "version": "0.1.8",
+  "version": "0.1.9-0",
   "description": "",
   "type": "module",
   "main": "dist/index.js",
