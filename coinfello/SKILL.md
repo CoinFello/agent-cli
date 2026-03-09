@@ -35,7 +35,7 @@ The CLI is available via `npx @coinfello/agent-cli`. No manual build step is req
 
 This skill performs the following sensitive operations:
 
-- **Private key generation and storage**: Running `create_account` generates a new private key and stores it **in plaintext** at `~/.clawdbot/skills/coinfello/config.json`. Protect this file accordingly.
+- **Key generation and storage**: By default, `create_account` generates a hardware-backed P256 key in the **macOS Secure Enclave** (or TPM 2.0 where available). The private key never leaves the hardware and cannot be exported — only public key coordinates and a key tag are saved to `~/.clawdbot/skills/coinfello/config.json`. If hardware key support is not available, the CLI warns and falls back to a software private key. You can also explicitly opt into a plaintext software key by passing `--use-unsafe-private-key`, which stores a raw private key in the config file — **this is intended only for development and testing**.
 - **Session token storage**: Running `sign_in` stores a SIWE session token in the same config file.
 - **Delegation signing**: Running `send_prompt` may automatically create and sign blockchain delegations based on server-requested scopes, then submit them to the CoinFello API.
 
@@ -44,7 +44,7 @@ Users should ensure they trust the CoinFello API endpoint configured via `COINFE
 ## Quick Start
 
 ```bash
-# 1. Create a smart account on a chain (generates a new private key automatically)
+# 1. Create a smart account on a chain (uses Secure Enclave by default)
 npx @coinfello/agent-cli create_account sepolia
 
 # 2. Sign in to CoinFello with your smart account (SIWE)
@@ -61,15 +61,15 @@ npx @coinfello/agent-cli get_transaction_status <txn_id>
 
 ### create_account
 
-Creates a MetaMask Hybrid smart account with an auto-generated private key and saves it to local config.
+Creates a MetaMask Hybrid smart account. By default, the signing key is generated in the **macOS Secure Enclave** (hardware-backed, non-exportable). If Secure Enclave is unavailable, the CLI warns and falls back to a software key. Pass `--use-unsafe-private-key` to explicitly use a plaintext software key (development/testing only).
 
 ```bash
-npx @coinfello/agent-cli create_account <chain>
+npx @coinfello/agent-cli create_account <chain> [--use-unsafe-private-key]
 ```
 
 - `<chain>` — A viem chain name: `sepolia`, `mainnet`, `polygon`, `arbitrum`, `optimism`, `base`, etc.
-- Generates a new private key automatically
-- Saves `private_key`, `smart_account_address`, and `chain` to `~/.clawdbot/skills/coinfello/config.json`
+- **Default (Secure Enclave)**: Generates a P256 key in hardware; saves `key_tag`, `public_key_x`, `public_key_y`, `key_id`, `smart_account_address`, and `chain` to `~/.clawdbot/skills/coinfello/config.json`. The private key never leaves the Secure Enclave.
+- **`--use-unsafe-private-key`**: Generates a random secp256k1 private key and stores it **in plaintext** in the config file. Use only for development and testing.
 - Must be run before `send_prompt`
 
 ### get_account
@@ -142,7 +142,7 @@ npx @coinfello/agent-cli get_transaction_status <txn_id>
 ### Basic: Send a Prompt (Server-Driven Delegation)
 
 ```bash
-# Create account if not already done
+# Create account if not already done (uses Secure Enclave by default)
 npx @coinfello/agent-cli create_account sepolia
 
 # Sign in (required for delegation flows)
