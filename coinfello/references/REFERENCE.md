@@ -91,16 +91,6 @@ The server determines whether a delegation is needed and, if so, what scope and 
 
 **ERC-6492 signature wrapping**: If the smart account has not yet been deployed on-chain, the CLI wraps the delegation signature using ERC-6492 (`serializeErc6492Signature`) with the account's factory address and factory data. This allows the delegation to be verified even before the account contract exists.
 
-### npx @coinfello/agent-cli get_transaction_status
-
-```
-npx @coinfello/agent-cli get_transaction_status <txn_id>
-```
-
-| Parameter | Type     | Required | Description                     |
-| --------- | -------- | -------- | ------------------------------- |
-| `txn_id`  | `string` | Yes      | Transaction ID from send_prompt |
-
 ## Supported Chains
 
 Any chain exported by `viem/chains`. Common examples:

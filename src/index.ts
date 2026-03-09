@@ -314,19 +314,4 @@ program
     }
   })
 
-// ── get_transaction_status ──────────────────────────────────────
-program
-  .command('get_transaction_status')
-  .description('Check the status of a submitted transaction')
-  .argument('<txn_id>', 'The transaction ID to check')
-  .action(async (txnId: string) => {
-    try {
-      const result = await getTransactionStatus(txnId)
-      console.log(JSON.stringify(result, null, 2))
-    } catch (err) {
-      console.error(`Failed to get transaction status: ${(err as Error).message}`)
-      process.exit(1)
-    }
-  })
-
 program.parse()

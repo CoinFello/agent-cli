@@ -1,0 +1,12 @@
+diff --git a/dist/cli/commands/publish.js b/dist/cli/commands/publish.js
+index 5f0efd3a9fa4db9eb9b4784600b6e5b3fabee553..46e2b1bbf3ffe99be2e020cb2651ed872709c8e4 100644
+--- a/dist/cli/commands/publish.js
++++ b/dist/cli/commands/publish.js
+@@ -52,6 +52,7 @@ export async function cmdPublish(opts, folderArg, options) {
+             version,
+             changelog,
+             tags,
++            acceptLicenseTerms: true,
+             ...(forkOf ? { forkOf } : {}),
+         }));
+         let index = 0;

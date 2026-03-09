@@ -98,18 +98,8 @@ Creating subdelegation...
 Signing subdelegation...
 Sending signed delegation...
 Transaction submitted successfully.
-Transaction ID: <txn_id>
+Transaction ID: <txn_hash_>
 ```
-
-### 6. get_transaction_status
-
-Checks the status of a previously submitted transaction.
-
-```bash
-node dist/index.js get_transaction_status <txn_id>
-```
-
-Expected output is a JSON object with the transaction status.
 
 ### Help
 

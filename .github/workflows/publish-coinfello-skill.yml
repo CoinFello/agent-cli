@@ -21,7 +21,7 @@ jobs:
           node-version: '20'
 
       - name: Install clawhub CLI
-        run: npm i -g clawhub
+        run: pnpm i
 
       - name: Extract version
         run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
@@ -45,5 +45,4 @@ jobs:
             --slug coinfello \
             --name "CoinFello" \
             --version "$VERSION" \
-            --changelog "$CHANGELOG" \
-            --accept-license-terms
+            --changelog "$CHANGELOG" 

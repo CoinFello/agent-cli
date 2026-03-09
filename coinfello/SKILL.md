@@ -52,9 +52,6 @@ npx @coinfello/agent-cli sign_in
 
 # 3. Send a natural language prompt — the server will request a delegation if needed
 npx @coinfello/agent-cli send_prompt "send 5 USDC to 0xRecipient..."
-
-# 4. Check transaction status
-npx @coinfello/agent-cli get_transaction_status <txn_id>
 ```
 
 ## Commands
@@ -127,16 +124,6 @@ npx @coinfello/agent-cli send_prompt "<prompt>"
    - Sends the signed delegation back as a `clientToolCallResponse` along with the `chatId` and `callId` from the initial response
    - Returns a `txn_id` for tracking
 
-### get_transaction_status
-
-Checks the status of a previously submitted transaction.
-
-```bash
-npx @coinfello/agent-cli get_transaction_status <txn_id>
-```
-
-- Returns a JSON object with the current transaction status
-
 ## Common Workflows
 
 ### Basic: Send a Prompt (Server-Driven Delegation)
@@ -150,9 +137,6 @@ npx @coinfello/agent-cli sign_in
 
 # Send a natural language prompt — delegation is handled automatically
 npx @coinfello/agent-cli send_prompt "send 5 USDC to 0xRecipient..."
-
-# Check the result
-npx @coinfello/agent-cli get_transaction_status <txn_id-from-above>
 ```
 
 ### Read-Only Prompt
