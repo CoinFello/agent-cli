@@ -40,8 +40,6 @@ func exitWithError(_ code: String, _ message: String) -> Never {
 
 // MARK: - Secure Enclave Operations
 
-/// Shared authenticated LAContext, set by the daemon on startup
-var authenticatedContext: LAContext? = nil
 
 func loadPrivateKey(tag: String, authContext: LAContext? = nil) -> SecKey {
     let tagData = tag.data(using: .utf8)!
@@ -189,15 +187,24 @@ enum DaemonError: Error {
 
 /// Non-fatal versions of core operations for daemon use (return Result instead of exiting)
 
-func daemonLoadPrivateKey(tag: String, authContext: LAContext) throws -> SecKey {
+/// Cache loaded SecKey references to avoid re-querying the keychain (which re-checks LAContext validity)
+var keyCache: [String: SecKey] = [:]
+
+func daemonLoadPrivateKey(tag: String) throws -> SecKey {
+    // Return cached key if available
+    if let cached = keyCache[tag] {
+        return cached
+    }
+
     let tagData = tag.data(using: .utf8)!
 
-    var query: [String: Any] = [
+    // Don't pass LAContext — the key's access control only has .privateKeyUsage (no .userPresence),
+    // so it doesn't require per-use biometric auth. Passing an expired LAContext is what causes -25308.
+    let query: [String: Any] = [
         kSecClass as String: kSecClassKey,
         kSecAttrApplicationTag as String: tagData,
         kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
         kSecReturnRef as String: true,
-        kSecUseAuthenticationContext as String: authContext,
     ]
 
     var item: CFTypeRef?
@@ -207,7 +214,9 @@ func daemonLoadPrivateKey(tag: String, authContext: LAContext) throws -> SecKey 
         throw DaemonError.operationFailed(code: "key_not_found", message: "No Secure Enclave key found with tag: \(tag) (status: \(status))")
     }
 
-    return key as! SecKey
+    let secKey = key as! SecKey
+    keyCache[tag] = secKey
+    return secKey
 }
 
 func daemonGenerateKey() throws -> [String: Any] {
@@ -267,12 +276,12 @@ func daemonGenerateKey() throws -> [String: Any] {
     ]
 }
 
-func daemonSignPayload(tag: String, payloadHex: String, authContext: LAContext) throws -> [String: Any] {
+func daemonSignPayload(tag: String, payloadHex: String) throws -> [String: Any] {
     guard let payload = dataFromHex(payloadHex) else {
         throw DaemonError.operationFailed(code: "invalid_payload", message: "Invalid hex payload")
     }
 
-    let privateKey = try daemonLoadPrivateKey(tag: tag, authContext: authContext)
+    let privateKey = try daemonLoadPrivateKey(tag: tag)
     let algorithm = SecKeyAlgorithm.ecdsaSignatureMessageX962SHA256
 
     guard SecKeyIsAlgorithmSupported(privateKey, .sign, algorithm) else {
@@ -293,8 +302,8 @@ func daemonSignPayload(tag: String, payloadHex: String, authContext: LAContext) 
     return ["signature": hexString(from: signature)]
 }
 
-func daemonGetPublicKey(tag: String, authContext: LAContext) throws -> [String: Any] {
-    let privateKey = try daemonLoadPrivateKey(tag: tag, authContext: authContext)
+func daemonGetPublicKey(tag: String) throws -> [String: Any] {
+    let privateKey = try daemonLoadPrivateKey(tag: tag)
 
     guard let publicKey = SecKeyCopyPublicKey(privateKey) else {
         throw DaemonError.operationFailed(code: "public_key_extraction_failed", message: "Failed to extract public key")
@@ -319,7 +328,7 @@ func daemonGetPublicKey(tag: String, authContext: LAContext) throws -> [String: 
     ]
 }
 
-func handleDaemonRequest(_ json: [String: Any], authContext: LAContext) -> Data {
+func handleDaemonRequest(_ json: [String: Any]) -> Data {
     let command = json["command"] as? String ?? ""
 
     do {
@@ -333,17 +342,21 @@ func handleDaemonRequest(_ json: [String: Any], authContext: LAContext) -> Data 
             guard let tag = json["tag"] as? String, let payload = json["payload"] as? String else {
                 return makeErrorResponse(code: "invalid_request", message: "Missing 'tag' or 'payload'")
             }
-            result = try daemonSignPayload(tag: tag, payloadHex: payload, authContext: authContext)
+            result = try daemonSignPayload(tag: tag, payloadHex: payload)
         case "get-public-key":
             guard let tag = json["tag"] as? String else {
                 return makeErrorResponse(code: "invalid_request", message: "Missing 'tag'")
             }
-            result = try daemonGetPublicKey(tag: tag, authContext: authContext)
+            result = try daemonGetPublicKey(tag: tag)
         default:
             return makeErrorResponse(code: "unknown_command", message: "Unknown command: \(command)")
         }
         return makeSuccessResponse(result: result)
     } catch let DaemonError.operationFailed(code, message) {
+        // If we got an auth error, invalidate the key cache and suggest restart
+        if message.contains("-25308") {
+            keyCache.removeAll()
+        }
         return makeErrorResponse(code: code, message: message)
     } catch {
         return makeErrorResponse(code: "internal_error", message: error.localizedDescription)
@@ -473,7 +486,7 @@ func runDaemon() {
         // Parse and handle
         var responseData: Data
         if let json = try? JSONSerialization.jsonObject(with: requestData) as? [String: Any] {
-            responseData = handleDaemonRequest(json, authContext: context)
+            responseData = handleDaemonRequest(json)
         } else {
             responseData = makeErrorResponse(code: "invalid_request", message: "Invalid JSON")
         }
