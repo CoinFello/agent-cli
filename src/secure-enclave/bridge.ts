@@ -26,7 +26,26 @@ function getBinaryPath(): string {
   // The binary lives inside a .app bundle so macOS AMFI can find the
   // embedded provisioning profile for keychain-access-groups entitlements.
   // When running from dist/index.js, __dirname is the dist/ directory.
-  return join(__dirname, 'secure-enclave-signer.app', 'Contents', 'MacOS', 'secure-enclave-signer')
+  // When running tests from src/, resolve to dist/ relative to project root.
+  const bundlePath = join(
+    __dirname,
+    'secure-enclave-signer.app',
+    'Contents',
+    'MacOS',
+    'secure-enclave-signer'
+  )
+  if (__dirname.includes('/src/')) {
+    const projectRoot = __dirname.split('/src/')[0]
+    return join(
+      projectRoot,
+      'dist',
+      'secure-enclave-signer.app',
+      'Contents',
+      'MacOS',
+      'secure-enclave-signer'
+    )
+  }
+  return bundlePath
 }
 
 const SOCKET_PATH = `/tmp/coinfello-se-signer-${userInfo().username}.sock`
