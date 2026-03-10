@@ -98,6 +98,22 @@ npx @coinfello/agent-cli set_delegation <delegation>
 | ------------ | -------- | -------- | --------------------------------------------------------------- |
 | `delegation` | `string` | Yes      | JSON-encoded Delegation object from MetaMask Smart Accounts Kit |
 
+### npx @coinfello/agent-cli signer-daemon
+
+```
+npx @coinfello/agent-cli signer-daemon <start|stop|status>
+```
+
+| Subcommand | Description                                                                                    |
+| ---------- | ---------------------------------------------------------------------------------------------- |
+| `start`    | Start the signing daemon. Authenticates via Touch ID / password once and caches authorization. |
+| `stop`     | Stop the signing daemon. Cleans up the socket and PID files.                                   |
+| `status`   | Check if the signing daemon is running (pings the daemon via its Unix socket).                 |
+
+The daemon listens on a user-scoped Unix domain socket at `/tmp/coinfello-se-signer-{username}.sock` and stores its PID at `/tmp/coinfello-se-signer-{username}.pid`. Socket permissions are set to `0600`.
+
+When the daemon is running, all Secure Enclave operations (`generateKey`, `signPayload`, `getPublicKey`) are routed through the socket, reusing the cached `LAContext` and avoiding repeated Touch ID prompts. When the daemon is not running, operations fall back to direct binary execution (which triggers a new authentication each time).
+
 ### npx @coinfello/agent-cli send_prompt
 
 ```
@@ -240,16 +256,19 @@ All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC 
 ## Security Considerations
 
 - **Key generation and storage**: By default, `create_account` generates a hardware-backed P256 key in the **macOS Secure Enclave**. The private key never leaves the hardware and cannot be exported — only public key coordinates and a key tag are saved to `~/.clawdbot/skills/coinfello/config.json`. A plaintext private key is **only** stored when `--use-unsafe-private-key` is explicitly passed (intended for development/testing). Restrict file permissions (e.g. `chmod 600`) and do not share or commit this file.
+- **Signer daemon**: The daemon caches a single authenticated `LAContext` on startup, so all signing operations within the session reuse the same authorization. The Unix domain socket is created with `0600` permissions and scoped to the current OS user. The daemon cleans up socket and PID files on `SIGTERM`/`SIGINT`.
 - **Session token storage**: `sign_in` stores a SIWE session token in the same config file.
 - **Automatic delegation signing**: `send_prompt` may create and sign delegations based on scopes requested by the server, then submit them to the CoinFello API endpoint. Ensure the `COINFELLO_BASE_URL` points to a trusted endpoint before running delegation flows.
 
 ## Error Messages
 
-| Error                                                         | Cause                               | Fix                                                   |
-| ------------------------------------------------------------- | ----------------------------------- | ----------------------------------------------------- |
-| `Unknown chain "<name>"`                                      | Invalid chain name                  | Use a valid viem chain name                           |
-| `No private key found in config. Run 'create_account' first.` | Missing signing key in config       | Run `npx @coinfello/agent-cli create_account <chain>` |
-| `Secure Enclave config missing. Run 'create_account' first.`  | Missing Secure Enclave key data     | Run `npx @coinfello/agent-cli create_account <chain>` |
-| `No smart account found. Run 'create_account' first.`         | Missing smart account in config     | Run `npx @coinfello/agent-cli create_account <chain>` |
-| `No chain found in config. Run 'create_account' first.`       | Missing chain in config             | Run `npx @coinfello/agent-cli create_account <chain>` |
-| `No delegation request received from the server.`             | Server returned unexpected response | Check the full response JSON printed                  |
+| Error                                                         | Cause                                 | Fix                                                   |
+| ------------------------------------------------------------- | ------------------------------------- | ----------------------------------------------------- |
+| `Unknown chain "<name>"`                                      | Invalid chain name                    | Use a valid viem chain name                           |
+| `No private key found in config. Run 'create_account' first.` | Missing signing key in config         | Run `npx @coinfello/agent-cli create_account <chain>` |
+| `Secure Enclave config missing. Run 'create_account' first.`  | Missing Secure Enclave key data       | Run `npx @coinfello/agent-cli create_account <chain>` |
+| `No smart account found. Run 'create_account' first.`         | Missing smart account in config       | Run `npx @coinfello/agent-cli create_account <chain>` |
+| `No chain found in config. Run 'create_account' first.`       | Missing chain in config               | Run `npx @coinfello/agent-cli create_account <chain>` |
+| `No delegation request received from the server.`             | Server returned unexpected response   | Check the full response JSON printed                  |
+| `Signing daemon is already running.`                          | Daemon already started                | Use `signer-daemon status` to confirm                 |
+| `Signing daemon is not running.`                              | Daemon not started or already stopped | Run `signer-daemon start`                             |
