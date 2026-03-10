@@ -36,7 +36,6 @@ program
 program
   .command('create_account')
   .description('Create a MetaMask smart account and save its address to local config')
-  .argument('<chain>', 'Chain name (e.g. sepolia, mainnet, polygon, arbitrum)')
   .option(
     '--use-unsafe-private-key',
     'Use a raw private key instead of hardware-backed key (Secure Enclave / TPM 2.0)'
@@ -69,7 +68,6 @@ program
 
           config.signer_type = 'secureEnclave'
           config.smart_account_address = address
-          config.chain = chain
           config.secure_enclave = {
             key_tag: keyTag,
             public_key_x: publicKeyX,
@@ -89,14 +87,13 @@ program
               'Warning: No hardware key support detected. Falling back to raw private key.'
             )
           }
-          console.log(`Creating smart account on ${chain}...`)
+          console.log(`Creating smart account...`)
           const privateKey = generatePrivateKey()
-          const { address } = await createSmartAccount(privateKey, chain)
+          const { address } = await createSmartAccount(privateKey, 1)
 
           config.private_key = privateKey
           config.signer_type = 'privateKey'
           config.smart_account_address = address
-          config.chain = chain
           await saveConfig(config)
 
           console.log('Smart account created successfully.')
@@ -185,10 +182,6 @@ program
         console.error("Error: No smart account found. Run 'create_account' first.")
         process.exit(1)
       }
-      if (!config.chain) {
-        console.error("Error: No chain found in config. Run 'create_account' first.")
-        process.exit(1)
-      }
       if (config.signer_type !== 'secureEnclave' && !config.private_key) {
         console.error("Error: No private key found in config. Run 'create_account' first.")
         process.exit(1)
@@ -272,7 +265,7 @@ program
       })
       console.log('Signed subdelegation')
       let sig = signature
-      const chain = resolveChainInput(config.chain)
+      const chain = resolveChainInput(args.chainId)
 
       const publicClient = createPublicClient(chain)
       console.log('Getting code...')

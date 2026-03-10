@@ -12,7 +12,6 @@ Created automatically by `create_account`. The schema depends on the signer type
 {
   "signer_type": "secureEnclave",
   "smart_account_address": "0x1234...abcd",
-  "chain": "sepolia",
   "secure_enclave": {
     "key_tag": "...",
     "public_key_x": "0x...",
@@ -31,7 +30,6 @@ Created automatically by `create_account`. The schema depends on the signer type
   "signer_type": "privateKey",
   "private_key": "0xabc123...def",
   "smart_account_address": "0x1234...abcd",
-  "chain": "sepolia",
   "session_token": "...",
   "delegation": { ... }
 }
@@ -41,7 +39,6 @@ Created automatically by `create_account`. The schema depends on the signer type
 | ----------------------------- | -------- | ---------------- | --------------------------------------------------------------------------------------------------- |
 | `signer_type`                 | `string` | `create_account` | `"secureEnclave"` (default) or `"privateKey"` (with `--use-unsafe-private-key`)                     |
 | `smart_account_address`       | `string` | `create_account` | Counterfactual address of the smart account                                                         |
-| `chain`                       | `string` | `create_account` | viem chain name used for account creation                                                           |
 | `secure_enclave.key_tag`      | `string` | `create_account` | Secure Enclave key tag (only with `secureEnclave` signer)                                           |
 | `secure_enclave.public_key_x` | `string` | `create_account` | P256 public key X coordinate (only with `secureEnclave` signer)                                     |
 | `secure_enclave.public_key_y` | `string` | `create_account` | P256 public key Y coordinate (only with `secureEnclave` signer)                                     |
@@ -55,16 +52,15 @@ Created automatically by `create_account`. The schema depends on the signer type
 ### npx @coinfello/agent-cli create_account
 
 ```
-npx @coinfello/agent-cli create_account <chain> [--use-unsafe-private-key] [--delete-existing-private-key]
+npx @coinfello/agent-cli create_account [--use-unsafe-private-key] [--delete-existing-private-key]
 ```
 
-| Parameter                       | Type     | Required | Description                                                                |
-| ------------------------------- | -------- | -------- | -------------------------------------------------------------------------- |
-| `chain`                         | `string` | Yes      | viem chain name (see below)                                                |
-| `--use-unsafe-private-key`      | flag     | No       | Use a plaintext software key instead of hardware-backed Secure Enclave key |
-| `--delete-existing-private-key` | flag     | No       | Overwrite an existing account                                              |
+| Parameter                       | Type | Required | Description                                                                |
+| ------------------------------- | ---- | -------- | -------------------------------------------------------------------------- |
+| `--use-unsafe-private-key`      | flag | No       | Use a plaintext software key instead of hardware-backed Secure Enclave key |
+| `--delete-existing-private-key` | flag | No       | Overwrite an existing account                                              |
 
-By default, generates a hardware-backed P256 key in the macOS Secure Enclave (the private key never leaves the hardware). If Secure Enclave is unavailable, the CLI warns and falls back to a software key. Pass `--use-unsafe-private-key` to explicitly use a plaintext private key (development/testing only).
+By default, generates a hardware-backed P256 key in the macOS Secure Enclave (the private key never leaves the hardware). If Secure Enclave is unavailable, the CLI warns and falls back to a software key. Pass `--use-unsafe-private-key` to explicitly use a plaintext private key (development/testing only). The chain is no longer specified at account creation time — it is determined dynamically by the server when a delegation is requested via `send_prompt`.
 
 ### npx @coinfello/agent-cli get_account
 
@@ -262,13 +258,11 @@ All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC 
 
 ## Error Messages
 
-| Error                                                         | Cause                                 | Fix                                                   |
-| ------------------------------------------------------------- | ------------------------------------- | ----------------------------------------------------- |
-| `Unknown chain "<name>"`                                      | Invalid chain name                    | Use a valid viem chain name                           |
-| `No private key found in config. Run 'create_account' first.` | Missing signing key in config         | Run `npx @coinfello/agent-cli create_account <chain>` |
-| `Secure Enclave config missing. Run 'create_account' first.`  | Missing Secure Enclave key data       | Run `npx @coinfello/agent-cli create_account <chain>` |
-| `No smart account found. Run 'create_account' first.`         | Missing smart account in config       | Run `npx @coinfello/agent-cli create_account <chain>` |
-| `No chain found in config. Run 'create_account' first.`       | Missing chain in config               | Run `npx @coinfello/agent-cli create_account <chain>` |
-| `No delegation request received from the server.`             | Server returned unexpected response   | Check the full response JSON printed                  |
-| `Signing daemon is already running.`                          | Daemon already started                | Use `signer-daemon status` to confirm                 |
-| `Signing daemon is not running.`                              | Daemon not started or already stopped | Run `signer-daemon start`                             |
+| Error                                                         | Cause                                 | Fix                                           |
+| ------------------------------------------------------------- | ------------------------------------- | --------------------------------------------- |
+| `No private key found in config. Run 'create_account' first.` | Missing signing key in config         | Run `npx @coinfello/agent-cli create_account` |
+| `Secure Enclave config missing. Run 'create_account' first.`  | Missing Secure Enclave key data       | Run `npx @coinfello/agent-cli create_account` |
+| `No smart account found. Run 'create_account' first.`         | Missing smart account in config       | Run `npx @coinfello/agent-cli create_account` |
+| `No delegation request received from the server.`             | Server returned unexpected response   | Check the full response JSON printed          |
+| `Signing daemon is already running.`                          | Daemon already started                | Use `signer-daemon status` to confirm         |
+| `Signing daemon is not running.`                              | Daemon not started or already stopped | Run `signer-daemon start`                     |
