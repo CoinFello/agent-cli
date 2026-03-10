@@ -18,7 +18,12 @@ import { createPublicClient } from './services/createPublicClient.js'
 import { generatePrivateKey } from 'viem/accounts'
 import type { Delegation } from '@metamask/smart-accounts-kit'
 import { SignedSubdelegation } from './types.js'
-import { isSecureEnclaveAvailable } from './secure-enclave/index.js'
+import {
+  isSecureEnclaveAvailable,
+  startDaemon,
+  stopDaemon,
+  isDaemonRunning,
+} from './secure-enclave/index.js'
 
 const program = new Command()
 
@@ -301,6 +306,62 @@ program
     } catch (err) {
       console.error(`Failed to send prompt: ${(err as Error).message}`)
       process.exit(1)
+    }
+  })
+
+// ── signer-daemon ─────────────────────────────────────────────
+const signerDaemon = program
+  .command('signer-daemon')
+  .description('Manage the Secure Enclave signing daemon')
+
+signerDaemon
+  .command('start')
+  .description('Start the signing daemon (authenticates via Touch ID / password once)')
+  .action(async () => {
+    try {
+      const running = await isDaemonRunning()
+      if (running) {
+        console.log('Signing daemon is already running.')
+        return
+      }
+      console.log('Starting signing daemon (authenticate when prompted)...')
+      const { pid, socket } = await startDaemon()
+      console.log(`Signing daemon started.`)
+      console.log(`PID: ${pid}`)
+      console.log(`Socket: ${socket}`)
+    } catch (err) {
+      console.error(`Failed to start daemon: ${(err as Error).message}`)
+      process.exit(1)
+    }
+  })
+
+signerDaemon
+  .command('stop')
+  .description('Stop the signing daemon')
+  .action(async () => {
+    try {
+      const running = await isDaemonRunning()
+      if (!running) {
+        console.log('Signing daemon is not running.')
+        return
+      }
+      await stopDaemon()
+      console.log('Signing daemon stopped.')
+    } catch (err) {
+      console.error(`Failed to stop daemon: ${(err as Error).message}`)
+      process.exit(1)
+    }
+  })
+
+signerDaemon
+  .command('status')
+  .description('Check if the signing daemon is running')
+  .action(async () => {
+    const running = await isDaemonRunning()
+    if (running) {
+      console.log('Signing daemon is running.')
+    } else {
+      console.log('Signing daemon is not running.')
     }
   })
 

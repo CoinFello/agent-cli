@@ -36,6 +36,7 @@ The CLI is available via `npx @coinfello/agent-cli`. No manual build step is req
 This skill performs the following sensitive operations:
 
 - **Key generation and storage**: By default, `create_account` generates a hardware-backed P256 key in the **macOS Secure Enclave** (or TPM 2.0 where available). The private key never leaves the hardware and cannot be exported — only public key coordinates and a key tag are saved to `~/.clawdbot/skills/coinfello/config.json`. If hardware key support is not available, the CLI warns and falls back to a software private key. You can also explicitly opt into a plaintext software key by passing `--use-unsafe-private-key`, which stores a raw private key in the config file — **this is intended only for development and testing**.
+- **Signer daemon**: Running `signer-daemon start` authenticates once via Touch ID / password and caches the authorization. All subsequent signing operations reuse this cached context, eliminating repeated auth prompts. The daemon communicates over a user-scoped Unix domain socket with restricted permissions (`0600`). If the daemon is not running, signing operations fall back to direct execution (prompting Touch ID each time).
 - **Session token storage**: Running `sign_in` stores a SIWE session token in the same config file.
 - **Delegation signing**: Running `send_prompt` may automatically create and sign blockchain delegations based on server-requested scopes, then submit them to the CoinFello API.
 
@@ -44,13 +45,16 @@ Users should ensure they trust the CoinFello API endpoint configured via `COINFE
 ## Quick Start
 
 ```bash
-# 1. Create a smart account on a chain (uses Secure Enclave by default)
+# 1. Start the signing daemon (optional, but avoids repeated Touch ID prompts)
+npx @coinfello/agent-cli signer-daemon start
+
+# 2. Create a smart account on a chain (uses Secure Enclave by default)
 npx @coinfello/agent-cli create_account sepolia
 
-# 2. Sign in to CoinFello with your smart account (SIWE)
+# 3. Sign in to CoinFello with your smart account (SIWE)
 npx @coinfello/agent-cli sign_in
 
-# 3. Send a natural language prompt — the server will request a delegation if needed
+# 4. Send a natural language prompt — the server will request a delegation if needed
 npx @coinfello/agent-cli send_prompt "send 5 USDC to 0xRecipient..."
 ```
 
@@ -103,6 +107,19 @@ npx @coinfello/agent-cli set_delegation '<delegation-json>'
 
 - `<delegation-json>` — A JSON string representing a `Delegation` object from MetaMask Smart Accounts Kit
 
+### signer-daemon
+
+Manages the Secure Enclave signing daemon. Starting the daemon authenticates once via Touch ID / password and caches the authorization, so subsequent signing operations (account creation, sign-in, delegation signing) do not prompt again.
+
+```bash
+npx @coinfello/agent-cli signer-daemon start    # Start daemon (one-time auth)
+npx @coinfello/agent-cli signer-daemon status   # Check if daemon is running
+npx @coinfello/agent-cli signer-daemon stop     # Stop the daemon
+```
+
+- If the daemon is not running, all Secure Enclave operations fall back to direct execution (prompting Touch ID each time)
+- The daemon is optional — all commands work without it
+
 ### send_prompt
 
 Sends a natural language prompt to CoinFello. If the server requires a delegation to execute the action, the CLI creates and signs a subdelegation automatically based on the server's requested scope and chain.
@@ -129,6 +146,9 @@ npx @coinfello/agent-cli send_prompt "<prompt>"
 ### Basic: Send a Prompt (Server-Driven Delegation)
 
 ```bash
+# Start the signing daemon (optional, reduces Touch ID prompts)
+npx @coinfello/agent-cli signer-daemon start
+
 # Create account if not already done (uses Secure Enclave by default)
 npx @coinfello/agent-cli create_account sepolia
 

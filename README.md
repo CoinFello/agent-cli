@@ -101,6 +101,23 @@ Transaction submitted successfully.
 Transaction ID: <txn_hash_>
 ```
 
+### 6. signer-daemon
+
+Manages the Secure Enclave signing daemon. Without the daemon, each signing operation (account creation, sign-in, delegation signing) triggers a separate Touch ID / password prompt. Starting the daemon authenticates once and caches the authorization for subsequent operations.
+
+```bash
+# Start the daemon (prompts Touch ID / password once)
+node dist/index.js signer-daemon start
+
+# Check if the daemon is running
+node dist/index.js signer-daemon status
+
+# Stop the daemon
+node dist/index.js signer-daemon stop
+```
+
+If the daemon is not running, all signing operations fall back to direct Secure Enclave binary execution (which prompts Touch ID each time).
+
 ### Help
 
 View all commands and options:
@@ -109,4 +126,5 @@ View all commands and options:
 node dist/index.js --help
 node dist/index.js create_account --help
 node dist/index.js send_prompt --help
+node dist/index.js signer-daemon --help
 ```
