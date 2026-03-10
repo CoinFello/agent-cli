@@ -281,6 +281,7 @@ program
       if (!isDeployed) {
         console.log('Getting factory args...')
         const factoryArgs = await smartAccount.getFactoryArgs()
+        console.log('factory args ', JSON.stringify(factoryArgs, null, 4))
         sig = serializeErc6492Signature({
           signature,
           address: factoryArgs.factory as `0x${string}`,
