@@ -270,17 +270,20 @@ program
       const publicClient = createPublicClient(chain)
       console.log('Getting code...')
       const code = await publicClient.getCode({ address: smartAccount.address })
+      console.log('code is ', code)
       const isDeployed = !!(code && code !== '0x')
       if (!isDeployed) {
         console.log('Getting factory args...')
         const factoryArgs = await smartAccount.getFactoryArgs()
         console.log('factory args ', JSON.stringify(factoryArgs, null, 4))
-        sig = serializeErc6492Signature({
-          signature,
-          address: factoryArgs.factory as `0x${string}`,
-          data: factoryArgs.factoryData as `0x${string}`,
-        })
-        console.log('Serialized 6492 sig')
+        if (factoryArgs.factory && factoryArgs.factoryData) {
+          sig = serializeErc6492Signature({
+            signature,
+            address: factoryArgs.factory as `0x${string}`,
+            data: factoryArgs.factoryData as `0x${string}`,
+          })
+          console.log('Serialized 6492 sig')
+        }
       }
 
       const signedSubdelegation: SignedSubdelegation = { ...subdelegation, signature: sig }
