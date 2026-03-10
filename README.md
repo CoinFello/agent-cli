@@ -13,22 +13,22 @@ You can run the CLI via `node dist/index.js` after building.
 
 ### 1. create_account
 
-Creates a MetaMask Hybrid smart account on the specified chain. By default, the signing key is generated in the **macOS Secure Enclave** (hardware-backed, non-exportable). If Secure Enclave is unavailable, the CLI warns and falls back to a software key.
+Creates a MetaMask Hybrid smart account. By default, the signing key is generated in the **macOS Secure Enclave** (hardware-backed, non-exportable). If Secure Enclave is unavailable, the CLI warns and falls back to a software key. The chain is determined dynamically by the server when a delegation is requested via `send_prompt`.
 
 Pass `--use-unsafe-private-key` to explicitly use a plaintext software key (development/testing only).
 
 ```bash
 # Default: Secure Enclave
-node dist/index.js create_account sepolia
+node dist/index.js create_account
 
 # Development/testing: plaintext private key
-node dist/index.js create_account sepolia --use-unsafe-private-key
+node dist/index.js create_account --use-unsafe-private-key
 ```
 
 Expected output (Secure Enclave):
 
 ```
-Creating Secure Enclave-backed smart account on sepolia...
+Creating Secure Enclave-backed smart account...
 Secure Enclave smart account created successfully.
 Address: 0x...
 Key tag: ...
@@ -38,7 +38,7 @@ Config saved to: /home/<user>/.clawdbot/skills/coinfello/config.json
 Expected output (unsafe private key):
 
 ```
-Creating smart account on sepolia...
+Creating smart account...
 Smart account created successfully.
 Address: 0x...
 Config saved to: /home/<user>/.clawdbot/skills/coinfello/config.json

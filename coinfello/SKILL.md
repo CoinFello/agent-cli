@@ -48,8 +48,8 @@ Users should ensure they trust the CoinFello API endpoint configured via `COINFE
 # 1. Start the signing daemon (optional, but avoids repeated Touch ID prompts)
 npx @coinfello/agent-cli signer-daemon start
 
-# 2. Create a smart account on a chain (uses Secure Enclave by default)
-npx @coinfello/agent-cli create_account sepolia
+# 2. Create a smart account (uses Secure Enclave by default)
+npx @coinfello/agent-cli create_account
 
 # 3. Sign in to CoinFello with your smart account (SIWE)
 npx @coinfello/agent-cli sign_in
@@ -65,11 +65,10 @@ npx @coinfello/agent-cli send_prompt "send 5 USDC to 0xRecipient..."
 Creates a MetaMask Hybrid smart account. By default, the signing key is generated in the **macOS Secure Enclave** (hardware-backed, non-exportable). If Secure Enclave is unavailable, the CLI warns and falls back to a software key. Pass `--use-unsafe-private-key` to explicitly use a plaintext software key (development/testing only).
 
 ```bash
-npx @coinfello/agent-cli create_account <chain> [--use-unsafe-private-key]
+npx @coinfello/agent-cli create_account [--use-unsafe-private-key]
 ```
 
-- `<chain>` — A viem chain name: `sepolia`, `mainnet`, `polygon`, `arbitrum`, `optimism`, `base`, etc.
-- **Default (Secure Enclave)**: Generates a P256 key in hardware; saves `key_tag`, `public_key_x`, `public_key_y`, `key_id`, `smart_account_address`, and `chain` to `~/.clawdbot/skills/coinfello/config.json`. The private key never leaves the Secure Enclave.
+- **Default (Secure Enclave)**: Generates a P256 key in hardware; saves `key_tag`, `public_key_x`, `public_key_y`, `key_id`, and `smart_account_address` to `~/.clawdbot/skills/coinfello/config.json`. The private key never leaves the Secure Enclave.
 - **`--use-unsafe-private-key`**: Generates a random secp256k1 private key and stores it **in plaintext** in the config file. Use only for development and testing.
 - Must be run before `send_prompt`
 
@@ -150,7 +149,7 @@ npx @coinfello/agent-cli send_prompt "<prompt>"
 npx @coinfello/agent-cli signer-daemon start
 
 # Create account if not already done (uses Secure Enclave by default)
-npx @coinfello/agent-cli create_account sepolia
+npx @coinfello/agent-cli create_account
 
 # Sign in (required for delegation flows)
 npx @coinfello/agent-cli sign_in
