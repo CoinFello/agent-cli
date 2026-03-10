@@ -266,23 +266,27 @@ program
       })
 
       // 7. Sign the subdelegation
-      console.log('Signing subdelegation...')
+      console.log('Signing subdelegation... ', JSON.stringify(subdelegation, null, 4))
       const signature = await smartAccount.signDelegation({
         delegation: subdelegation,
       })
+      console.log('Signed subdelegation')
       let sig = signature
       const chain = resolveChainInput(config.chain)
 
       const publicClient = createPublicClient(chain)
+      console.log('Getting code...')
       const code = await publicClient.getCode({ address: smartAccount.address })
       const isDeployed = !!(code && code !== '0x')
       if (!isDeployed) {
+        console.log('Getting factory args...')
         const factoryArgs = await smartAccount.getFactoryArgs()
         sig = serializeErc6492Signature({
           signature,
           address: factoryArgs.factory as `0x${string}`,
           data: factoryArgs.factoryData as `0x${string}`,
         })
+        console.log('Serialized 6492 sig')
       }
 
       const signedSubdelegation: SignedSubdelegation = { ...subdelegation, signature: sig }
