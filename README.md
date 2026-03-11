@@ -79,7 +79,15 @@ Stores a parent delegation JSON object in config.
 node dist/index.js set_delegation '{"delegate":"0x...","delegator":"0x...","authority":"0x0","caveats":[],"salt":"0x0","signature":"0x..."}'
 ```
 
-### 5. send_prompt
+### 5. new_chat
+
+Clears the saved conversation chat ID from local config, forcing the next `send_prompt` call to start a fresh chat.
+
+```bash
+node dist/index.js new_chat
+```
+
+### 6. send_prompt
 
 Sends a natural language prompt to CoinFello. If the server requires a delegation to execute the action, the CLI creates and signs a subdelegation automatically based on the server's requested scope and chain. Requires `create_account` and `sign_in` to have been run first.
 
@@ -101,7 +109,7 @@ Transaction submitted successfully.
 Transaction ID: <txn_hash_>
 ```
 
-### 6. signer-daemon
+### 7. signer-daemon
 
 Manages the Secure Enclave signing daemon. Without the daemon, each signing operation (account creation, sign-in, delegation signing) triggers a separate Touch ID / password prompt. Starting the daemon authenticates once and caches the authorization for subsequent operations.
 
