@@ -41,71 +41,66 @@ program
     'Use a raw private key instead of hardware-backed key (Secure Enclave / TPM 2.0)'
   )
   .option('--delete-existing-private-key', 'Delete the existing account and create a new one')
-  .action(
-    async (
-      chain: string,
-      opts: { useUnsafePrivateKey?: boolean; deleteExistingPrivateKey?: boolean }
-    ) => {
-      try {
-        const config = await loadConfig()
-        if (config.smart_account_address) {
-          if (!opts.deleteExistingPrivateKey) {
-            console.error(
-              `Error: An account already exists (${config.smart_account_address}). ` +
-                'Use --delete-existing-private-key to overwrite it.'
-            )
-            process.exit(1)
-          }
-          console.warn('Deleting existing account and creating a new one...')
+  .action(async (opts: { useUnsafePrivateKey?: boolean; deleteExistingPrivateKey?: boolean }) => {
+    try {
+      const config = await loadConfig()
+      if (config.smart_account_address) {
+        if (!opts.deleteExistingPrivateKey) {
+          console.error(
+            `Error: An account already exists (${config.smart_account_address}). ` +
+              'Use --delete-existing-private-key to overwrite it.'
+          )
+          process.exit(1)
         }
-
-        const useHardwareKey = !opts.useUnsafePrivateKey && isSecureEnclaveAvailable()
-
-        if (useHardwareKey) {
-          console.log(`Creating Secure Enclave-backed smart account on ${chain}...`)
-          const { address, keyTag, publicKeyX, publicKeyY, keyId } =
-            await createSmartAccountWithSecureEnclave(chain)
-
-          config.signer_type = 'secureEnclave'
-          config.smart_account_address = address
-          config.secure_enclave = {
-            key_tag: keyTag,
-            public_key_x: publicKeyX,
-            public_key_y: publicKeyY,
-            key_id: keyId,
-          }
-          delete config.private_key
-          await saveConfig(config)
-
-          console.log('Secure Enclave smart account created successfully.')
-          console.log(`Address: ${address}`)
-          console.log(`Key tag: ${keyTag}`)
-          console.log(`Config saved to: ${CONFIG_PATH}`)
-        } else {
-          if (!opts.useUnsafePrivateKey) {
-            console.warn(
-              'Warning: No hardware key support detected. Falling back to raw private key.'
-            )
-          }
-          console.log(`Creating smart account...`)
-          const privateKey = generatePrivateKey()
-          const { address } = await createSmartAccount(privateKey, 1)
-
-          config.private_key = privateKey
-          config.signer_type = 'privateKey'
-          config.smart_account_address = address
-          await saveConfig(config)
-
-          console.log('Smart account created successfully.')
-          console.log(`Address: ${address}`)
-          console.log(`Config saved to: ${CONFIG_PATH}`)
-        }
-      } catch (err) {
-        console.error(`Failed to create account: ${(err as Error).message}`)
-        process.exit(1)
+        console.warn('Deleting existing account and creating a new one...')
       }
+
+      const useHardwareKey = !opts.useUnsafePrivateKey && isSecureEnclaveAvailable()
+
+      if (useHardwareKey) {
+        console.log(`Creating Secure Enclave-backed smart account on ${chain}...`)
+        const { address, keyTag, publicKeyX, publicKeyY, keyId } =
+          await createSmartAccountWithSecureEnclave(chain)
+
+        config.signer_type = 'secureEnclave'
+        config.smart_account_address = address
+        config.secure_enclave = {
+          key_tag: keyTag,
+          public_key_x: publicKeyX,
+          public_key_y: publicKeyY,
+          key_id: keyId,
+        }
+        delete config.private_key
+        await saveConfig(config)
+
+        console.log('Secure Enclave smart account created successfully.')
+        console.log(`Address: ${address}`)
+        console.log(`Key tag: ${keyTag}`)
+        console.log(`Config saved to: ${CONFIG_PATH}`)
+      } else {
+        if (!opts.useUnsafePrivateKey) {
+          console.warn(
+            'Warning: No hardware key support detected. Falling back to raw private key.'
+          )
+        }
+        console.log(`Creating smart account...`)
+        const privateKey = generatePrivateKey()
+        const { address } = await createSmartAccount(privateKey, 1)
+
+        config.private_key = privateKey
+        config.signer_type = 'privateKey'
+        config.smart_account_address = address
+        await saveConfig(config)
+
+        console.log('Smart account created successfully.')
+        console.log(`Address: ${address}`)
+        console.log(`Config saved to: ${CONFIG_PATH}`)
+      }
+    } catch (err) {
+      console.error(`Failed to create account: ${(err as Error).message}`)
+      process.exit(1)
     }
-  )
+  })
 
 // ── get_account ─────────────────────────────────────────────────
 program
