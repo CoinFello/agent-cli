@@ -24,10 +24,14 @@ import {
   stopDaemon,
   isDaemonRunning,
 } from './secure-enclave/index.js'
+import packageJson from '../package.json'
 
 const program = new Command()
 
-program.name('coinfello').description('CoinFello CLI - Smart Account interactions').version('1.0.0')
+program
+  .name('coinfello')
+  .description('CoinFello CLI - Smart Account interactions')
+  .version(packageJson.version)
 
 // ── create_account ──────────────────────────────────────────────
 program
