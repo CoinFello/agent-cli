@@ -17,13 +17,13 @@ metadata:
 
 # CoinFello CLI Skill
 
-Use the `npx @coinfello/agent-cli` CLI to interact with CoinFello. The CLI handles smart account creation, SIWE authentication, delegation management, prompt-based transactions, and transaction status checks.
+Use the `npx @coinfello/agent-cli@latest` CLI to interact with CoinFello. The CLI handles smart account creation, SIWE authentication, delegation management, prompt-based transactions, and transaction status checks.
 
 ## Prerequisites
 
 - Node.js 20 or later (npx is included with Node.js)
 
-The CLI is available via `npx @coinfello/agent-cli`. No manual build step is required.
+The CLI is available via `npx @coinfello/agent-cli@latest`. No manual build step is required.
 
 ## Environment Variables
 
@@ -46,16 +46,16 @@ Users should ensure they trust the CoinFello API endpoint configured via `COINFE
 
 ```bash
 # 1. Start the signing daemon (optional, but avoids repeated Touch ID prompts)
-npx @coinfello/agent-cli signer-daemon start
+npx @coinfello/agent-cli@latest signer-daemon start
 
 # 2. Create a smart account (uses Secure Enclave by default)
-npx @coinfello/agent-cli create_account
+npx @coinfello/agent-cli@latest create_account
 
 # 3. Sign in to CoinFello with your smart account (SIWE)
-npx @coinfello/agent-cli sign_in
+npx @coinfello/agent-cli@latest sign_in
 
 # 4. Send a natural language prompt — the server will request a delegation if needed
-npx @coinfello/agent-cli send_prompt "send 5 USDC to 0xRecipient..."
+npx @coinfello/agent-cli@latest send_prompt "send 5 USDC to 0xRecipient..."
 ```
 
 ## Commands
@@ -65,7 +65,7 @@ npx @coinfello/agent-cli send_prompt "send 5 USDC to 0xRecipient..."
 Creates a MetaMask Hybrid smart account. By default, the signing key is generated in the **macOS Secure Enclave** (hardware-backed, non-exportable). If Secure Enclave is unavailable, the CLI warns and falls back to a software key. Pass `--use-unsafe-private-key` to explicitly use a plaintext software key (development/testing only).
 
 ```bash
-npx @coinfello/agent-cli create_account [--use-unsafe-private-key]
+npx @coinfello/agent-cli@latest create_account [--use-unsafe-private-key]
 ```
 
 - **Default (Secure Enclave)**: Generates a P256 key in hardware; saves `key_tag`, `public_key_x`, `public_key_y`, `key_id`, and `smart_account_address` to `~/.clawdbot/skills/coinfello/config.json`. The private key never leaves the Secure Enclave.
@@ -77,7 +77,7 @@ npx @coinfello/agent-cli create_account [--use-unsafe-private-key]
 Displays the current smart account address from local config.
 
 ```bash
-npx @coinfello/agent-cli get_account
+npx @coinfello/agent-cli@latest get_account
 ```
 
 - Prints the stored `smart_account_address`
@@ -88,7 +88,7 @@ npx @coinfello/agent-cli get_account
 Authenticates with CoinFello using Sign-In with Ethereum (SIWE) and your smart account. Saves the session token to local config.
 
 ```bash
-npx @coinfello/agent-cli sign_in
+npx @coinfello/agent-cli@latest sign_in
 ```
 
 - Signs in using the private key stored in config
@@ -101,7 +101,7 @@ npx @coinfello/agent-cli sign_in
 Stores a signed parent delegation (JSON) in local config.
 
 ```bash
-npx @coinfello/agent-cli set_delegation '<delegation-json>'
+npx @coinfello/agent-cli@latest set_delegation '<delegation-json>'
 ```
 
 - `<delegation-json>` — A JSON string representing a `Delegation` object from MetaMask Smart Accounts Kit
@@ -111,7 +111,7 @@ npx @coinfello/agent-cli set_delegation '<delegation-json>'
 Clears the saved chat session ID from local config so the next `send_prompt` starts a fresh conversation.
 
 ```bash
-npx @coinfello/agent-cli new_chat
+npx @coinfello/agent-cli@latest new_chat
 ```
 
 - Removes `chat_id` from `~/.clawdbot/skills/coinfello/config.json`
@@ -122,9 +122,9 @@ npx @coinfello/agent-cli new_chat
 Manages the Secure Enclave signing daemon. Starting the daemon authenticates once via Touch ID / password and caches the authorization, so subsequent signing operations (account creation, sign-in, delegation signing) do not prompt again.
 
 ```bash
-npx @coinfello/agent-cli signer-daemon start    # Start daemon (one-time auth)
-npx @coinfello/agent-cli signer-daemon status   # Check if daemon is running
-npx @coinfello/agent-cli signer-daemon stop     # Stop the daemon
+npx @coinfello/agent-cli@latest signer-daemon start    # Start daemon (one-time auth)
+npx @coinfello/agent-cli@latest signer-daemon status   # Check if daemon is running
+npx @coinfello/agent-cli@latest signer-daemon stop     # Stop the daemon
 ```
 
 - If the daemon is not running, all Secure Enclave operations fall back to direct execution (prompting Touch ID each time)
@@ -135,12 +135,12 @@ npx @coinfello/agent-cli signer-daemon stop     # Stop the daemon
 Sends a natural language prompt to CoinFello. If the server requires a delegation to execute the action, the CLI creates and signs a subdelegation automatically based on the server's requested scope and chain.
 
 ```bash
-npx @coinfello/agent-cli send_prompt "<prompt>"
+npx @coinfello/agent-cli@latest send_prompt "<prompt>"
 ```
 
 Note that if you receive
 `Failed to send prompt: Conversation request failed (400): {"error":"Your input exceeds the context window of this model. Please adjust your input or start a new chat and try again."}`
-then you should call `npx @coinfello/agent-cli new_chat` to start a new chat with a new context window.
+then you should call `npx @coinfello/agent-cli@latest new_chat` to start a new chat with a new context window.
 
 **What happens internally:**
 
@@ -161,16 +161,16 @@ then you should call `npx @coinfello/agent-cli new_chat` to start a new chat wit
 
 ```bash
 # Start the signing daemon (optional, reduces Touch ID prompts)
-npx @coinfello/agent-cli signer-daemon start
+npx @coinfello/agent-cli@latest signer-daemon start
 
 # Create account if not already done (uses Secure Enclave by default)
-npx @coinfello/agent-cli create_account
+npx @coinfello/agent-cli@latest create_account
 
 # Sign in (required for delegation flows)
-npx @coinfello/agent-cli sign_in
+npx @coinfello/agent-cli@latest sign_in
 
 # Send a natural language prompt — delegation is handled automatically
-npx @coinfello/agent-cli send_prompt "send 5 USDC to 0xRecipient..."
+npx @coinfello/agent-cli@latest send_prompt "send 5 USDC to 0xRecipient..."
 ```
 
 ### Read-Only Prompt
@@ -178,7 +178,7 @@ npx @coinfello/agent-cli send_prompt "send 5 USDC to 0xRecipient..."
 Some prompts don't require a transaction. The CLI detects this automatically and just prints the response.
 
 ```bash
-npx @coinfello/agent-cli send_prompt "what is the chain ID for Base?"
+npx @coinfello/agent-cli@latest send_prompt "what is the chain ID for Base?"
 ```
 
 ## Gas Cost Estimates

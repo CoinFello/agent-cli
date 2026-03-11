@@ -52,10 +52,10 @@ Created automatically by `create_account`. The schema depends on the signer type
 
 ## Command Reference
 
-### npx @coinfello/agent-cli create_account
+### npx @coinfello/agent-cli@latest create_account
 
 ```
-npx @coinfello/agent-cli create_account [--use-unsafe-private-key] [--delete-existing-private-key]
+npx @coinfello/agent-cli@latest create_account [--use-unsafe-private-key] [--delete-existing-private-key]
 ```
 
 | Parameter                       | Type | Required | Description                                                                |
@@ -65,18 +65,18 @@ npx @coinfello/agent-cli create_account [--use-unsafe-private-key] [--delete-exi
 
 By default, generates a hardware-backed P256 key in the macOS Secure Enclave (the private key never leaves the hardware). If Secure Enclave is unavailable, the CLI warns and falls back to a software key. Pass `--use-unsafe-private-key` to explicitly use a plaintext private key (development/testing only). The chain is no longer specified at account creation time — it is determined dynamically by the server when a delegation is requested via `send_prompt`.
 
-### npx @coinfello/agent-cli get_account
+### npx @coinfello/agent-cli@latest get_account
 
 ```
-npx @coinfello/agent-cli get_account
+npx @coinfello/agent-cli@latest get_account
 ```
 
 No parameters. Prints the stored smart account address from config. Exits with an error if no account has been created.
 
-### npx @coinfello/agent-cli sign_in
+### npx @coinfello/agent-cli@latest sign_in
 
 ```
-npx @coinfello/agent-cli sign_in [--base-url <url>]
+npx @coinfello/agent-cli@latest sign_in [--base-url <url>]
 ```
 
 | Parameter    | Type     | Required | Default                         | Description                                                                         |
@@ -87,28 +87,28 @@ The default resolves using the `COINFELLO_BASE_URL` environment variable (defaul
 
 Performs a Sign-In with Ethereum (SIWE) flow using the signing key from config (Secure Enclave or private key, depending on `signer_type`). Saves the `session_token` to config on success. The session token is automatically injected as a cookie for subsequent API calls.
 
-### npx @coinfello/agent-cli set_delegation
+### npx @coinfello/agent-cli@latest set_delegation
 
 ```
-npx @coinfello/agent-cli set_delegation <delegation>
+npx @coinfello/agent-cli@latest set_delegation <delegation>
 ```
 
 | Parameter    | Type     | Required | Description                                                     |
 | ------------ | -------- | -------- | --------------------------------------------------------------- |
 | `delegation` | `string` | Yes      | JSON-encoded Delegation object from MetaMask Smart Accounts Kit |
 
-### npx @coinfello/agent-cli new_chat
+### npx @coinfello/agent-cli@latest new_chat
 
 ```
-npx @coinfello/agent-cli new_chat
+npx @coinfello/agent-cli@latest new_chat
 ```
 
 No parameters. Clears the stored `chat_id` from config so the next `send_prompt` call starts a new chat session.
 
-### npx @coinfello/agent-cli signer-daemon
+### npx @coinfello/agent-cli@latest signer-daemon
 
 ```
-npx @coinfello/agent-cli signer-daemon <start|stop|status>
+npx @coinfello/agent-cli@latest signer-daemon <start|stop|status>
 ```
 
 | Subcommand | Description                                                                                    |
@@ -121,10 +121,10 @@ The daemon listens on a user-scoped Unix domain socket at `/tmp/coinfello-se-sig
 
 When the daemon is running, all Secure Enclave operations (`generateKey`, `signPayload`, `getPublicKey`) are routed through the socket, reusing the cached `LAContext` and avoiding repeated Touch ID prompts. When the daemon is not running, operations fall back to direct binary execution (which triggers a new authentication each time).
 
-### npx @coinfello/agent-cli send_prompt
+### npx @coinfello/agent-cli@latest send_prompt
 
 ```
-npx @coinfello/agent-cli send_prompt <prompt>
+npx @coinfello/agent-cli@latest send_prompt <prompt>
 ```
 
 | Parameter | Type     | Required | Default | Description                                  |
@@ -271,11 +271,11 @@ All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC 
 
 ## Error Messages
 
-| Error                                                         | Cause                                 | Fix                                           |
-| ------------------------------------------------------------- | ------------------------------------- | --------------------------------------------- |
-| `No private key found in config. Run 'create_account' first.` | Missing signing key in config         | Run `npx @coinfello/agent-cli create_account` |
-| `Secure Enclave config missing. Run 'create_account' first.`  | Missing Secure Enclave key data       | Run `npx @coinfello/agent-cli create_account` |
-| `No smart account found. Run 'create_account' first.`         | Missing smart account in config       | Run `npx @coinfello/agent-cli create_account` |
-| `No delegation request received from the server.`             | Server returned unexpected response   | Check the full response JSON printed          |
-| `Signing daemon is already running.`                          | Daemon already started                | Use `signer-daemon status` to confirm         |
-| `Signing daemon is not running.`                              | Daemon not started or already stopped | Run `signer-daemon start`                     |
+| Error                                                         | Cause                                 | Fix                                                  |
+| ------------------------------------------------------------- | ------------------------------------- | ---------------------------------------------------- |
+| `No private key found in config. Run 'create_account' first.` | Missing signing key in config         | Run `npx @coinfello/agent-cli@latest create_account` |
+| `Secure Enclave config missing. Run 'create_account' first.`  | Missing Secure Enclave key data       | Run `npx @coinfello/agent-cli@latest create_account` |
+| `No smart account found. Run 'create_account' first.`         | Missing smart account in config       | Run `npx @coinfello/agent-cli@latest create_account` |
+| `No delegation request received from the server.`             | Server returned unexpected response   | Check the full response JSON printed                 |
+| `Signing daemon is already running.`                          | Daemon already started                | Use `signer-daemon status` to confirm                |
+| `Signing daemon is not running.`                              | Daemon not started or already stopped | Run `signer-daemon start`                            |
