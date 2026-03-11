@@ -28,7 +28,7 @@ import {
 const program = new Command()
 
 program
-  .name('openclaw')
+  .name('coinfello')
   .description('CoinFello CLI - MetaMask Smart Account interactions')
   .version('1.0.0')
 
