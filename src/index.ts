@@ -58,9 +58,9 @@ program
       const useHardwareKey = !opts.useUnsafePrivateKey && isSecureEnclaveAvailable()
 
       if (useHardwareKey) {
-        console.log(`Creating Secure Enclave-backed smart account on ${chain}...`)
+        console.log(`Creating Secure Enclave-backed smart account`)
         const { address, keyTag, publicKeyX, publicKeyY, keyId } =
-          await createSmartAccountWithSecureEnclave(chain)
+          await createSmartAccountWithSecureEnclave()
 
         config.signer_type = 'secureEnclave'
         config.smart_account_address = address

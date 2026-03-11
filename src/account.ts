@@ -96,7 +96,7 @@ export function createSubdelegation({
 
 // ── Secure Enclave P256 account functions ────────────────────────
 
-export async function createSmartAccountWithSecureEnclave(chainInput: string | number): Promise<{
+export async function createSmartAccountWithSecureEnclave(): Promise<{
   smartAccount: HybridSmartAccount
   address: string
   keyTag: string
@@ -104,7 +104,7 @@ export async function createSmartAccountWithSecureEnclave(chainInput: string | n
   publicKeyY: string
   keyId: Hex
 }> {
-  const chain = resolveChainInput(chainInput)
+  const chain = resolveChainInput(1)
   const publicClient = createPublicClient(chain)
 
   // Generate P256 key in Secure Enclave
