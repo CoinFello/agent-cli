@@ -27,15 +27,12 @@ import {
 
 const program = new Command()
 
-program
-  .name('coinfello')
-  .description('CoinFello CLI - MetaMask Smart Account interactions')
-  .version('1.0.0')
+program.name('coinfello').description('CoinFello CLI - Smart Account interactions').version('1.0.0')
 
 // ── create_account ──────────────────────────────────────────────
 program
   .command('create_account')
-  .description('Create a MetaMask smart account and save its address to local config')
+  .description('Create a smart account and save its address to local config')
   .option(
     '--use-unsafe-private-key',
     'Use a raw private key instead of hardware-backed key (Secure Enclave / TPM 2.0)'

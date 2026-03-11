@@ -1,6 +1,6 @@
 ---
 name: coinfello
-description: 'Interact with CoinFello using the @coinfello/agent-cli to create MetaMask smart accounts, sign in with SIWE, manage delegations, send prompts with server-driven ERC-20 token subdelegations, and check transaction status. Use when the user wants to send crypto transactions via natural language prompts, manage smart account delegations, or check CoinFello transaction results.'
+description: 'Interact with CoinFello using the @coinfello/agent-cli to create a smart account, sign in with SIWE, manage delegations, send prompts with server-driven ERC-20 token subdelegations, and check transaction status. Use when the user wants to send crypto transactions via natural language prompts, manage smart account delegations, or check CoinFello transaction results.'
 compatibility: Requires Node.js 20+ (npx is included with Node.js).
 metadata:
   clawdbot:
@@ -17,7 +17,7 @@ metadata:
 
 # CoinFello CLI Skill
 
-Use the `npx @coinfello/agent-cli` CLI to interact with CoinFello through MetaMask Smart Accounts. The CLI handles smart account creation, SIWE authentication, delegation management, prompt-based transactions, and transaction status checks.
+Use the `npx @coinfello/agent-cli` CLI to interact with CoinFello. The CLI handles smart account creation, SIWE authentication, delegation management, prompt-based transactions, and transaction status checks.
 
 ## Prerequisites
 

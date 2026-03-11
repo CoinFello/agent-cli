@@ -1,7 +1,9 @@
 {
   "name": "@coinfello/agent-cli",
-  "version": "0.1.22",
-  "description": "",
+  "version": "0.1.23",
+  "description": "CLI for managing a web3 smart account and executing blockchain transactions via CoinFello",
+  "repository": "CoinFello/agent-cli",
+  "homepage": "https://coinfello.com",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -25,8 +27,8 @@
     "test:e2e": "vitest run tests/e2e"
   },
   "keywords": [],
-  "author": "",
-  "license": "UNLICENSED",
+  "author": "Brett Cleary",
+  "license": "MIT",
   "packageManager": "pnpm@10.24.0",
   "dependencies": {
     "@metamask/smart-accounts-kit": "0.4.0-beta.1",
