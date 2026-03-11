@@ -162,6 +162,24 @@ program
     }
   })
 
+// ── new_chat ────────────────────────────────────────────────────
+program
+  .command('new_chat')
+  .description('Clear the saved chat ID from local config and start a fresh conversation')
+  .action(async () => {
+    try {
+      const config = await loadConfig()
+      delete config.chat_id
+      await saveConfig(config)
+
+      console.log('Saved chat ID cleared successfully.')
+      console.log(`Config saved to: ${CONFIG_PATH}`)
+    } catch (err) {
+      console.error(`Failed to clear chat ID: ${(err as Error).message}`)
+      process.exit(1)
+    }
+  })
+
 // ── send_prompt ─────────────────────────────────────────────────
 program
   .command('send_prompt')
@@ -188,7 +206,12 @@ program
       console.log('Sending prompt...')
       const initialResponse = await sendConversation({
         prompt,
+        chatId: config.chat_id,
       })
+      if (initialResponse.chatId && initialResponse.chatId !== config.chat_id) {
+        config.chat_id = initialResponse.chatId
+        await saveConfig(config)
+      }
 
       // Read-only response: no tool calls and no transaction
       if (!initialResponse.clientToolCalls?.length && !initialResponse.txn_id) {

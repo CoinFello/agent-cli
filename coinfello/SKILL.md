@@ -127,6 +127,10 @@ Sends a natural language prompt to CoinFello. If the server requires a delegatio
 npx @coinfello/agent-cli send_prompt "<prompt>"
 ```
 
+Note that if you receive
+`Failed to send prompt: Conversation request failed (400): {"error":"Your input exceeds the context window of this model. Please adjust your input or start a new chat and try again."}`
+then you should call `npx @coinfello/agent-cli new_chat` to start a new chat with a new context window.
+
 **What happens internally:**
 
 1. Fetches available agents from `/api/v1/automation/coinfello-agents` and sends the prompt to CoinFello's conversation endpoint

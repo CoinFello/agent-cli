@@ -6,6 +6,7 @@ import type { Delegation } from '@metamask/smart-accounts-kit'
 export interface Config {
   private_key?: string
   smart_account_address?: string
+  chat_id?: string
   delegation?: Delegation
   session_token?: string
   signer_type?: 'privateKey' | 'secureEnclave'
