@@ -12,6 +12,7 @@ Created automatically by `create_account`. The schema depends on the signer type
 {
   "signer_type": "secureEnclave",
   "smart_account_address": "0x1234...abcd",
+  "chat_id": "chat_abc123...",
   "secure_enclave": {
     "key_tag": "...",
     "public_key_x": "0x...",
@@ -30,6 +31,7 @@ Created automatically by `create_account`. The schema depends on the signer type
   "signer_type": "privateKey",
   "private_key": "0xabc123...def",
   "smart_account_address": "0x1234...abcd",
+  "chat_id": "chat_abc123...",
   "session_token": "...",
   "delegation": { ... }
 }
@@ -46,6 +48,7 @@ Created automatically by `create_account`. The schema depends on the signer type
 | `private_key`                 | `string` | `create_account` | Plaintext hex private key (**only** with `--use-unsafe-private-key`, absent in Secure Enclave mode) |
 | `session_token`               | `string` | `sign_in`        | SIWE session token for authenticated API calls                                                      |
 | `delegation`                  | `object` | `set_delegation` | Optional stored delegation                                                                          |
+| `chat_id`                     | `string` | `send_prompt`    | Persisted conversation chat ID reused across prompts; removed by `new_chat`                         |
 
 ## Command Reference
 
@@ -94,6 +97,14 @@ npx @coinfello/agent-cli set_delegation <delegation>
 | ------------ | -------- | -------- | --------------------------------------------------------------- |
 | `delegation` | `string` | Yes      | JSON-encoded Delegation object from MetaMask Smart Accounts Kit |
 
+### npx @coinfello/agent-cli new_chat
+
+```
+npx @coinfello/agent-cli new_chat
+```
+
+No parameters. Clears the stored `chat_id` from config so the next `send_prompt` call starts a new chat session.
+
 ### npx @coinfello/agent-cli signer-daemon
 
 ```
@@ -121,6 +132,8 @@ npx @coinfello/agent-cli send_prompt <prompt>
 | `prompt`  | `string` | Yes      | —       | Natural language prompt to send to CoinFello |
 
 The server determines whether a delegation is needed and, if so, what scope and chain to use. The client creates and signs the subdelegation based on the server's `ask_for_delegation` client tool call response. Each subdelegation is created with a unique random salt to ensure delegation uniqueness.
+
+`send_prompt` reuses `chat_id` from config when available and persists server-returned `chatId` values for continued context across calls.
 
 **ERC-6492 signature wrapping**: If the smart account has not yet been deployed on-chain, the CLI wraps the delegation signature using ERC-6492 (`serializeErc6492Signature`) with the account's factory address and factory data. This allows the delegation to be verified even before the account contract exists.
 

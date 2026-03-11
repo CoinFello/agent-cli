@@ -106,6 +106,17 @@ npx @coinfello/agent-cli set_delegation '<delegation-json>'
 
 - `<delegation-json>` — A JSON string representing a `Delegation` object from MetaMask Smart Accounts Kit
 
+### new_chat
+
+Clears the saved chat session ID from local config so the next `send_prompt` starts a fresh conversation.
+
+```bash
+npx @coinfello/agent-cli new_chat
+```
+
+- Removes `chat_id` from `~/.clawdbot/skills/coinfello/config.json`
+- Use this when you want to reset conversation context (for example, after context-window errors)
+
 ### signer-daemon
 
 Manages the Secure Enclave signing daemon. Starting the daemon authenticates once via Touch ID / password and caches the authorization, so subsequent signing operations (account creation, sign-in, delegation signing) do not prompt again.
