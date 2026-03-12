@@ -88,7 +88,7 @@ export async function sendConversation({
   if (chatId) {
     body.chatId = chatId
   }
-  if (process.env.CI) {
+  if (process.env.CI === 'true') {
     body.ci = true
   }
 
