@@ -33,3 +33,4 @@ jobs:
         run: pnpm test:e2e
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          CI: true

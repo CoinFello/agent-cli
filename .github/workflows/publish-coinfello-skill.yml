@@ -16,12 +16,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install clawhub CLI
-        run: npm i -g clawhub
+      - name: Install dependencies
+        run: pnpm i
 
       - name: Extract version
         run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
@@ -37,12 +39,12 @@ jobs:
           echo "CHANGELOG=${CHANGELOG}" >> $GITHUB_ENV
 
       - name: Login to ClawHub
-        run: clawhub login --token ${{ secrets.CLAWHUB_TOKEN }} --no-browser
+        run: pnpm exec clawhub login --token ${{ secrets.CLAWHUB_TOKEN }} --no-browser
 
       - name: Publish coinfello skill to ClawHub
         run: |
-          clawhub publish ./coinfello \
+          pnpm exec clawhub publish ./coinfello \
             --slug coinfello \
             --name "CoinFello" \
             --version "$VERSION" \
-            --changelog "$CHANGELOG"
+            --changelog "$CHANGELOG" 

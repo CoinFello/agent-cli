@@ -13,84 +13,118 @@ You can run the CLI via `node dist/index.js` after building.
 
 ### 1. create_account
 
-Generates a new private key, creates a MetaMask smart account on the specified chain, and saves both the key and address to `~/.clawdbot/skills/coinfello/config.json`.
+Creates a MetaMask Hybrid smart account. By default, the signing key is generated in the **macOS Secure Enclave** (hardware-backed, non-exportable). If Secure Enclave is unavailable, the CLI warns and falls back to a software key. The chain is determined dynamically by the server when a delegation is requested via `send_prompt`.
+
+Pass `--use-unsafe-private-key` to explicitly use a plaintext software key (development/testing only).
 
 ```bash
-node dist/index.js create_account sepolia
+# Default: Secure Enclave
+node dist/index.js create_account
+
+# Development/testing: plaintext private key
+node dist/index.js create_account --use-unsafe-private-key
 ```
 
-Expected output:
+Expected output (Secure Enclave):
 
 ```
-Creating smart account on sepolia...
+Creating Secure Enclave-backed smart account...
+Secure Enclave smart account created successfully.
+Address: 0x...
+Key tag: ...
+Config saved to: /home/<user>/.clawdbot/skills/coinfello/config.json
+```
+
+Expected output (unsafe private key):
+
+```
+Creating smart account...
 Smart account created successfully.
 Address: 0x...
 Config saved to: /home/<user>/.clawdbot/skills/coinfello/config.json
 ```
 
-Verify the config was written:
+To overwrite an existing account, pass `--delete-existing-private-key`.
+
+### 2. get_account
+
+Displays the current smart account address from local config.
 
 ```bash
-cat ~/.clawdbot/skills/coinfello/config.json
+node dist/index.js get_account
 ```
 
-### 2. set_delegation
+### 3. sign_in
 
-Stores a parent delegation JSON object in config. Only needed if you plan to use `--use-redelegation` with `send_prompt`.
+Authenticates with CoinFello using Sign-In with Ethereum (SIWE). Saves the session token to local config.
 
 ```bash
-node dist/index.js set_delegation '{"delegate":"0x0000000000000000000000000000000000000001","delegator":"0x...","authority":"0x0","caveats":[],"salt":"0x0","signature":"0x..."}'
+node dist/index.js sign_in
 ```
 
 Expected output:
 
 ```
-Delegation saved successfully.
-Config saved to: /home/<user>/.clawdbot/skills/coinfello/config.json
+Signing in with smart account...
+Sign-in successful.
+User ID: ...
+Session token saved to config.
 ```
 
-### 3. send_prompt
+### 4. set_delegation
 
-Sends a prompt to CoinFello with a locally-created ERC-20 subdelegation. Requires `create_account` to have been run first. The private key is read from the config file.
+Stores a parent delegation JSON object in config.
 
 ```bash
-node dist/index.js send_prompt "swap 5 USDC for ETH" \
-  --token-address 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 \
-  --max-amount 5 \
-  --decimals 6
+node dist/index.js set_delegation '{"delegate":"0x...","delegator":"0x...","authority":"0x0","caveats":[],"salt":"0x0","signature":"0x..."}'
 ```
 
-With redelegation (requires `set_delegation` first):
+### 5. new_chat
+
+Clears the saved conversation chat ID from local config, forcing the next `send_prompt` call to start a fresh chat.
 
 ```bash
-node dist/index.js send_prompt "swap 5 USDC for ETH" \
-  --token-address 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 \
-  --max-amount 5 \
-  --decimals 6 \
-  --use-redelegation
+node dist/index.js new_chat
+```
+
+### 6. send_prompt
+
+Sends a natural language prompt to CoinFello. If the server requires a delegation to execute the action, the CLI creates and signs a subdelegation automatically based on the server's requested scope and chain. Requires `create_account` and `sign_in` to have been run first.
+
+```bash
+node dist/index.js send_prompt "send 5 USDC to 0xRecipient..."
 ```
 
 Expected output:
 
 ```
+Sending prompt...
+Delegation requested: scope=erc20, chainId=8453
 Fetching CoinFello delegate address...
 Loading smart account...
 Creating subdelegation...
 Signing subdelegation...
-Sending to conversation endpoint...
+Sending signed delegation...
 Transaction submitted successfully.
-Transaction ID: <txn_id>
+Transaction ID: <txn_hash_>
 ```
 
-### 4. get_transaction_status
+### 7. signer-daemon
 
-Checks the status of a previously submitted transaction.
+Manages the Secure Enclave signing daemon. Without the daemon, each signing operation (account creation, sign-in, delegation signing) triggers a separate Touch ID / password prompt. Starting the daemon authenticates once and caches the authorization for subsequent operations.
 
 ```bash
-node dist/index.js get_transaction_status <txn_id>
+# Start the daemon (prompts Touch ID / password once)
+node dist/index.js signer-daemon start
+
+# Check if the daemon is running
+node dist/index.js signer-daemon status
+
+# Stop the daemon
+node dist/index.js signer-daemon stop
 ```
 
-Expected output is a JSON object with the transaction status.
+If the daemon is not running, all signing operations fall back to direct Secure Enclave binary execution (which prompts Touch ID each time).
 
 ### Help
 
@@ -98,5 +132,7 @@ View all commands and options:
 
 ```bash
 node dist/index.js --help
+node dist/index.js create_account --help
 node dist/index.js send_prompt --help
+node dist/index.js signer-daemon --help
 ```

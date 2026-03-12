@@ -60,23 +60,6 @@ jobs:
           codesign --verify --deep --strict dist/secure-enclave-signer.app
           codesign -dvv dist/secure-enclave-signer.app
 
-      - name: Notarize
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          ditto -c -k --keepParent dist/secure-enclave-signer.app \
-            $RUNNER_TEMP/secure-enclave-signer.zip
-
-          xcrun notarytool submit $RUNNER_TEMP/secure-enclave-signer.zip \
-            --apple-id "$APPLE_ID" \
-            --password "$APPLE_APP_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" \
-            --wait
-
-          xcrun stapler staple dist/secure-enclave-signer.app
-
       - name: Upload signed binary
         uses: actions/upload-artifact@v4
         with:

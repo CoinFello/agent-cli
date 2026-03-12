@@ -9,108 +9,99 @@ import {
   type HybridSmartAccount,
 } from './account.js'
 import { loadConfig, saveConfig, CONFIG_PATH } from './config.js'
-import {
-  getCoinFelloAddress,
-  sendConversation,
-  getTransactionStatus,
-  BASE_URL_V1,
-  BASE_URL,
-} from './api.js'
+import { getCoinFelloAddress, sendConversation, BASE_URL_V1, BASE_URL } from './api.js'
 import { loadSessionToken } from './cookies.js'
 import { signInWithAgent } from './siwe.js'
 import { parseScope } from './scope.js'
-import { createPublicClient, http, serializeErc6492Signature, type Hex } from 'viem'
+import { serializeErc6492Signature, type Hex } from 'viem'
+import { createPublicClient } from './services/createPublicClient.js'
 import { generatePrivateKey } from 'viem/accounts'
 import type { Delegation } from '@metamask/smart-accounts-kit'
 import { SignedSubdelegation } from './types.js'
-import { isSecureEnclaveAvailable } from './secure-enclave/index.js'
+import {
+  isSecureEnclaveAvailable,
+  startDaemon,
+  stopDaemon,
+  isDaemonRunning,
+} from './secure-enclave/index.js'
+import packageJson from '../package.json'
 
 const program = new Command()
 
 program
-  .name('openclaw')
-  .description('CoinFello CLI - MetaMask Smart Account interactions')
-  .version('1.0.0')
+  .name('coinfello')
+  .description('CoinFello CLI - Smart Account interactions')
+  .version(packageJson.version)
 
 // ── create_account ──────────────────────────────────────────────
 program
   .command('create_account')
-  .description('Create a MetaMask smart account and save its address to local config')
-  .argument('<chain>', 'Chain name (e.g. sepolia, mainnet, polygon, arbitrum)')
+  .description('Create a smart account and save its address to local config')
   .option(
     '--use-unsafe-private-key',
     'Use a raw private key instead of hardware-backed key (Secure Enclave / TPM 2.0)'
   )
   .option('--delete-existing-private-key', 'Delete the existing account and create a new one')
-  .action(
-    async (
-      chain: string,
-      opts: { useUnsafePrivateKey?: boolean; deleteExistingPrivateKey?: boolean }
-    ) => {
-      try {
-        const config = await loadConfig()
-        if (config.smart_account_address) {
-          if (!opts.deleteExistingPrivateKey) {
-            console.error(
-              `Error: An account already exists (${config.smart_account_address}). ` +
-                'Use --delete-existing-private-key to overwrite it.'
-            )
-            process.exit(1)
-          }
-          console.warn('Deleting existing account and creating a new one...')
+  .action(async (opts: { useUnsafePrivateKey?: boolean; deleteExistingPrivateKey?: boolean }) => {
+    try {
+      const config = await loadConfig()
+      if (config.smart_account_address) {
+        if (!opts.deleteExistingPrivateKey) {
+          console.error(
+            `Error: An account already exists (${config.smart_account_address}). ` +
+              'Use --delete-existing-private-key to overwrite it.'
+          )
+          process.exit(1)
         }
-
-        const useHardwareKey = !opts.useUnsafePrivateKey && isSecureEnclaveAvailable()
-
-        if (useHardwareKey) {
-          console.log(`Creating Secure Enclave-backed smart account on ${chain}...`)
-          const { address, keyTag, publicKeyX, publicKeyY, keyId } =
-            await createSmartAccountWithSecureEnclave(chain)
-
-          const config = await loadConfig()
-          config.signer_type = 'secureEnclave'
-          config.smart_account_address = address
-          config.chain = chain
-          config.secure_enclave = {
-            key_tag: keyTag,
-            public_key_x: publicKeyX,
-            public_key_y: publicKeyY,
-            key_id: keyId,
-          }
-          delete config.private_key
-          await saveConfig(config)
-
-          console.log('Secure Enclave smart account created successfully.')
-          console.log(`Address: ${address}`)
-          console.log(`Key tag: ${keyTag}`)
-          console.log(`Config saved to: ${CONFIG_PATH}`)
-        } else {
-          if (!opts.useUnsafePrivateKey) {
-            console.warn(
-              'Warning: No hardware key support detected. Falling back to raw private key.'
-            )
-          }
-          console.log(`Creating smart account on ${chain}...`)
-          const privateKey = generatePrivateKey()
-          const { address } = await createSmartAccount(privateKey, chain)
-
-          const config = await loadConfig()
-          config.private_key = privateKey
-          config.signer_type = 'privateKey'
-          config.smart_account_address = address
-          config.chain = chain
-          await saveConfig(config)
-
-          console.log('Smart account created successfully.')
-          console.log(`Address: ${address}`)
-          console.log(`Config saved to: ${CONFIG_PATH}`)
-        }
-      } catch (err) {
-        console.error(`Failed to create account: ${(err as Error).message}`)
-        process.exit(1)
+        console.warn('Deleting existing account and creating a new one...')
       }
+
+      const useHardwareKey = !opts.useUnsafePrivateKey && isSecureEnclaveAvailable()
+
+      if (useHardwareKey) {
+        console.log(`Creating Secure Enclave-backed smart account`)
+        const { address, keyTag, publicKeyX, publicKeyY, keyId } =
+          await createSmartAccountWithSecureEnclave()
+
+        config.signer_type = 'secureEnclave'
+        config.smart_account_address = address
+        config.secure_enclave = {
+          key_tag: keyTag,
+          public_key_x: publicKeyX,
+          public_key_y: publicKeyY,
+          key_id: keyId,
+        }
+        delete config.private_key
+        await saveConfig(config)
+
+        console.log('Secure Enclave smart account created successfully.')
+        console.log(`Address: ${address}`)
+        console.log(`Key tag: ${keyTag}`)
+        console.log(`Config saved to: ${CONFIG_PATH}`)
+      } else {
+        if (!opts.useUnsafePrivateKey) {
+          console.warn(
+            'Warning: No hardware key support detected. Falling back to raw private key.'
+          )
+        }
+        console.log(`Creating smart account...`)
+        const privateKey = generatePrivateKey()
+        const { address } = await createSmartAccount(privateKey, 1)
+
+        config.private_key = privateKey
+        config.signer_type = 'privateKey'
+        config.smart_account_address = address
+        await saveConfig(config)
+
+        console.log('Smart account created successfully.')
+        console.log(`Address: ${address}`)
+        console.log(`Config saved to: ${CONFIG_PATH}`)
+      }
+    } catch (err) {
+      console.error(`Failed to create account: ${(err as Error).message}`)
+      process.exit(1)
     }
-  )
+  })
 
 // ── get_account ─────────────────────────────────────────────────
 program
@@ -175,6 +166,24 @@ program
     }
   })
 
+// ── new_chat ────────────────────────────────────────────────────
+program
+  .command('new_chat')
+  .description('Clear the saved chat ID from local config and start a fresh conversation')
+  .action(async () => {
+    try {
+      const config = await loadConfig()
+      delete config.chat_id
+      await saveConfig(config)
+
+      console.log('Saved chat ID cleared successfully.')
+      console.log(`Config saved to: ${CONFIG_PATH}`)
+    } catch (err) {
+      console.error(`Failed to clear chat ID: ${(err as Error).message}`)
+      process.exit(1)
+    }
+  })
+
 // ── send_prompt ─────────────────────────────────────────────────
 program
   .command('send_prompt')
@@ -185,10 +194,6 @@ program
       const config = await loadConfig()
       if (!config.smart_account_address) {
         console.error("Error: No smart account found. Run 'create_account' first.")
-        process.exit(1)
-      }
-      if (!config.chain) {
-        console.error("Error: No chain found in config. Run 'create_account' first.")
         process.exit(1)
       }
       if (config.signer_type !== 'secureEnclave' && !config.private_key) {
@@ -205,7 +210,12 @@ program
       console.log('Sending prompt...')
       const initialResponse = await sendConversation({
         prompt,
+        chatId: config.chat_id,
       })
+      if (initialResponse.chatId && initialResponse.chatId !== config.chat_id) {
+        config.chat_id = initialResponse.chatId
+        await saveConfig(config)
+      }
 
       // Read-only response: no tool calls and no transaction
       if (!initialResponse.clientToolCalls?.length && !initialResponse.txn_id) {
@@ -268,26 +278,31 @@ program
       })
 
       // 7. Sign the subdelegation
-      console.log('Signing subdelegation...')
+      console.log('Signing subdelegation... ', JSON.stringify(subdelegation, null, 4))
       const signature = await smartAccount.signDelegation({
         delegation: subdelegation,
       })
+      console.log('Signed subdelegation')
       let sig = signature
-      const chain = resolveChainInput(config.chain)
+      const chain = resolveChainInput(args.chainId)
 
-      const publicClient = createPublicClient({
-        chain,
-        transport: http(),
-      })
+      const publicClient = createPublicClient(chain)
+      console.log('Getting code...')
       const code = await publicClient.getCode({ address: smartAccount.address })
+      console.log('code is ', code)
       const isDeployed = !!(code && code !== '0x')
       if (!isDeployed) {
+        console.log('Getting factory args...')
         const factoryArgs = await smartAccount.getFactoryArgs()
-        sig = serializeErc6492Signature({
-          signature,
-          address: factoryArgs.factory as `0x${string}`,
-          data: factoryArgs.factoryData as `0x${string}`,
-        })
+        console.log('factory args ', JSON.stringify(factoryArgs, null, 4))
+        if (factoryArgs.factory && factoryArgs.factoryData) {
+          sig = serializeErc6492Signature({
+            signature,
+            address: factoryArgs.factory as `0x${string}`,
+            data: factoryArgs.factoryData as `0x${string}`,
+          })
+          console.log('Serialized 6492 sig')
+        }
       }
 
       const signedSubdelegation: SignedSubdelegation = { ...subdelegation, signature: sig }
@@ -314,18 +329,59 @@ program
     }
   })
 
-// ── get_transaction_status ──────────────────────────────────────
-program
-  .command('get_transaction_status')
-  .description('Check the status of a submitted transaction')
-  .argument('<txn_id>', 'The transaction ID to check')
-  .action(async (txnId: string) => {
+// ── signer-daemon ─────────────────────────────────────────────
+const signerDaemon = program
+  .command('signer-daemon')
+  .description('Manage the Secure Enclave signing daemon')
+
+signerDaemon
+  .command('start')
+  .description('Start the signing daemon (authenticates via Touch ID / password once)')
+  .action(async () => {
     try {
-      const result = await getTransactionStatus(txnId)
-      console.log(JSON.stringify(result, null, 2))
+      const running = await isDaemonRunning()
+      if (running) {
+        console.log('Signing daemon is already running.')
+        return
+      }
+      console.log('Starting signing daemon (authenticate when prompted)...')
+      const { pid, socket } = await startDaemon()
+      console.log(`Signing daemon started.`)
+      console.log(`PID: ${pid}`)
+      console.log(`Socket: ${socket}`)
     } catch (err) {
-      console.error(`Failed to get transaction status: ${(err as Error).message}`)
+      console.error(`Failed to start daemon: ${(err as Error).message}`)
       process.exit(1)
+    }
+  })
+
+signerDaemon
+  .command('stop')
+  .description('Stop the signing daemon')
+  .action(async () => {
+    try {
+      const running = await isDaemonRunning()
+      if (!running) {
+        console.log('Signing daemon is not running.')
+        return
+      }
+      await stopDaemon()
+      console.log('Signing daemon stopped.')
+    } catch (err) {
+      console.error(`Failed to stop daemon: ${(err as Error).message}`)
+      process.exit(1)
+    }
+  })
+
+signerDaemon
+  .command('status')
+  .description('Check if the signing daemon is running')
+  .action(async () => {
+    const running = await isDaemonRunning()
+    if (running) {
+      console.log('Signing daemon is running.')
+    } else {
+      console.log('Signing daemon is not running.')
     }
   })
 

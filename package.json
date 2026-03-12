@@ -1,14 +1,17 @@
 {
   "name": "@coinfello/agent-cli",
-  "version": "0.1.4",
-  "description": "",
+  "version": "0.2.1",
+  "description": "CLI for managing a web3 smart account and executing blockchain transactions via CoinFello",
+  "repository": "CoinFello/agent-cli",
+  "homepage": "https://coinfello.com",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "openclaw": "./dist/index.js"
+    "coinfello": "./dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "publishConfig": {
     "access": "public"
@@ -25,8 +28,8 @@
     "test:e2e": "vitest run tests/e2e"
   },
   "keywords": [],
-  "author": "",
-  "license": "UNLICENSED",
+  "author": "Brett Cleary",
+  "license": "MIT",
   "packageManager": "pnpm@10.24.0",
   "dependencies": {
     "@metamask/smart-accounts-kit": "0.4.0-beta.1",
@@ -38,6 +41,7 @@
     "@noble/curves": "^2.0.1",
     "@noble/hashes": "^2.0.1",
     "@types/node": "^25.2.1",
+    "clawhub": "^0.7.0",
     "dotenv": "^17.3.1",
     "eslint": "^10.0.0",
     "eslint-config-prettier": "^10.1.8",

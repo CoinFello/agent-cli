@@ -88,6 +88,9 @@ export async function sendConversation({
   if (chatId) {
     body.chatId = chatId
   }
+  if (process.env.CI === 'true') {
+    body.ci = true
+  }
 
   const response = await fetchWithCookies(`${BASE_URL}api/conversation`, {
     method: 'POST',
@@ -100,17 +103,4 @@ export async function sendConversation({
   }
 
   return response.json() as Promise<ConversationResponse>
-}
-
-export async function getTransactionStatus(txnId: string): Promise<Record<string, unknown>> {
-  const response = await fetchWithCookies(
-    `${BASE_URL_V1}/transaction_status?txn_id=${encodeURIComponent(txnId)}`
-  )
-
-  if (!response.ok) {
-    const text = await response.text()
-    throw new Error(`Transaction status request failed (${response.status}): ${text}`)
-  }
-
-  return response.json() as Promise<Record<string, unknown>>
 }
