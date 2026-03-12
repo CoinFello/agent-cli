@@ -12,12 +12,9 @@ const CHAIN = "sepolia";
 // ~/.clawdbot/skills/coinfello/config.json as a side effect of sign-in.
 
 describe("send_prompt read-only flow", () => {
-  let smartAccountAddress: string;
-
   beforeAll(async () => {
     const privateKey = generatePrivateKey();
     const { address } = await createSmartAccount(privateKey, CHAIN);
-    smartAccountAddress = address;
 
     const config = {
       private_key: privateKey as Hex,
@@ -26,6 +23,7 @@ describe("send_prompt read-only flow", () => {
     };
 
     await signInWithAgent(SIWE_BASE_URL, config);
+    process.env.CI = 'true'
   });
 
   it("returns responseText with no tool calls when sending a greeting", async () => {
@@ -70,12 +68,9 @@ describe("send_prompt read-only flow", () => {
 });
 
 describe("send_prompt delegation flow", () => {
-  let smartAccountAddress: string;
-
   beforeAll(async () => {
     const privateKey = generatePrivateKey();
     const { address } = await createSmartAccount(privateKey, CHAIN);
-    smartAccountAddress = address;
 
     const config = {
       private_key: privateKey as Hex,
@@ -84,6 +79,7 @@ describe("send_prompt delegation flow", () => {
     };
 
     await signInWithAgent(SIWE_BASE_URL, config);
+    process.env.CI = 'true'
   });
 
   it("requests a delegation when asked to send 0.001 USDC on Base", async () => {

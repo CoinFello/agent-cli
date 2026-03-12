@@ -88,6 +88,9 @@ export async function sendConversation({
   if (chatId) {
     body.chatId = chatId
   }
+  if (process.env.CI) {
+    body.ci = true
+  }
 
   const response = await fetchWithCookies(`${BASE_URL}api/conversation`, {
     method: 'POST',
