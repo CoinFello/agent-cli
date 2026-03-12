@@ -214,7 +214,7 @@ describe("send_prompt CLI end-to-end", () => {
     // Step 2: Stake entire USDC balance into the fluid vault
     const { stdout: stdout2, stderr: stderr2 } = await runCli([
       "send_prompt",
-      "stake into the fluid vault my entire USDC balance on Base",
+      "stake into the fluid vault 0.0001 USDC balance on Base",
     ]);
     console.log(stdout2);
     console.error(stderr2);
@@ -236,7 +236,7 @@ describe("send_prompt CLI end-to-end", () => {
     // Step 3: Unstake entire USDC balance from the fluid vault
     const { stdout: stdout3, stderr: stderr3 } = await runCli([
       "send_prompt",
-      "unstake my entire USDC balance from the fluid vault on Base",
+      "unstake my 0.0001 USDC balance from the fluid vault on Base",
     ]);
     console.log(stdout3);
     console.error(stderr3);
