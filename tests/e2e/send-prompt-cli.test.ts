@@ -98,6 +98,7 @@ describe("send_prompt CLI end-to-end", () => {
   });
 
   it("returns a text response for a read-only prompt via the CLI", async () => {
+    await runCli(["new_chat"]);
     const { stdout, stderr, exitCode } = await runCli(["send_prompt", "hello"]);
 
     console.log(stdout)
@@ -108,6 +109,7 @@ describe("send_prompt CLI end-to-end", () => {
   });
 
   it("completes the delegation flow when asked to send ETH via the CLI", async () => {
+    await runCli(["new_chat"]);
     const balanceBefore = await sepoliaPublicClient.getBalance({ address: smartAccountAddress });
     console.log(`Smart account Base Sepolia balance before send: ${formatEther(balanceBefore)} ETH`);
 
@@ -210,7 +212,6 @@ describe("send_prompt CLI end-to-end", () => {
     expect(stdout1.trim()).toBeTruthy();
 
     // Step 2: Stake entire USDC balance into the fluid vault
-    await runCli(["new_chat"]);
     const { stdout: stdout2, stderr: stderr2 } = await runCli([
       "send_prompt",
       "stake into the fluid vault my entire USDC balance on Base",
@@ -233,7 +234,6 @@ describe("send_prompt CLI end-to-end", () => {
     expect(usdcAfterStake).toBeLessThan(usdcBefore);
 
     // Step 3: Unstake entire USDC balance from the fluid vault
-    await runCli(["new_chat"]);
     const { stdout: stdout3, stderr: stderr3 } = await runCli([
       "send_prompt",
       "unstake my entire USDC balance from the fluid vault on Base",
