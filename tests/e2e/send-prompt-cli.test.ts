@@ -24,6 +24,7 @@ function runCli(
   return new Promise((resolve) => {
     const child = spawn("node", [CLI_PATH, ...args], {
       timeout: 360_000,
+      env: { ...process.env, CI: "true" },
     });
     let stdout = "";
     let stderr = "";
