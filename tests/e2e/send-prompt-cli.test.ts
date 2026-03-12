@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { describe, it, expect, beforeAll } from "vitest";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { type Hex, createPublicClient, createWalletClient, formatEther, http, parseEther } from "viem";
+import { type Hex, createPublicClient, createWalletClient, formatEther, formatUnits, http, parseEther } from "viem";
 import { base, baseSepolia } from "viem/chains";
 import { createSmartAccount } from "../../src/account.js";
 import { signInWithAgent } from "../../src/siwe.js";
@@ -172,5 +172,81 @@ describe("send_prompt CLI end-to-end", () => {
     console.log(`Smart account Base mainnet balance after swap: ${formatEther(balanceAfter)} ETH`);
     expect(balanceAfter).toBeLessThan(balanceBefore);
     expect(balanceBefore - balanceAfter).toBeGreaterThanOrEqual(parseEther("0.00000001"));
+  });
+
+  it("completes the staking/unstaking flow for USDC in the fluid vault on Base via the CLI", async () => {
+    const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as Hex;
+    const ERC20_ABI = [
+      {
+        name: "balanceOf",
+        type: "function",
+        inputs: [{ name: "account", type: "address" }],
+        outputs: [{ name: "", type: "uint256" }],
+        stateMutability: "view",
+      },
+    ] as const;
+
+    const usdcBefore = await basePublicClient.readContract({
+      address: USDC_ADDRESS,
+      abi: ERC20_ABI,
+      functionName: "balanceOf",
+      args: [smartAccountAddress],
+    });
+    console.log(`Smart account USDC balance before staking: ${formatUnits(usdcBefore, 6)} USDC`);
+    expect(usdcBefore).toBeGreaterThan(0n);
+
+    // Step 1: Get staking opportunities (read-only)
+    const { stdout: stdout1, stderr: stderr1 } = await runCli([
+      "send_prompt",
+      "get staking opportunities for usdc on base",
+    ]);
+    console.log(stdout1);
+    console.error(stderr1);
+    expect(stdout1).toContain("Sending prompt...");
+    expect(stdout1.trim()).toBeTruthy();
+
+    // Step 2: Stake entire USDC balance into the fluid vault
+    const { stdout: stdout2, stderr: stderr2 } = await runCli([
+      "send_prompt",
+      "stake into the fluid vault my entire USDC balance on Base",
+    ]);
+    console.log(stdout2);
+    console.error(stderr2);
+    expect(stdout2).toContain("Sending prompt...");
+    expect(stdout2).toContain("Delegation requested");
+    expect(stdout2).toContain("Creating subdelegation...");
+    expect(stdout2).toContain("Signing subdelegation...");
+    expect(stdout2).toContain("Sending signed delegation...");
+
+    const usdcAfterStake = await basePublicClient.readContract({
+      address: USDC_ADDRESS,
+      abi: ERC20_ABI,
+      functionName: "balanceOf",
+      args: [smartAccountAddress],
+    });
+    console.log(`Smart account USDC balance after staking: ${formatUnits(usdcAfterStake, 6)} USDC`);
+    expect(usdcAfterStake).toBeLessThan(usdcBefore);
+
+    // Step 3: Unstake entire USDC balance from the fluid vault
+    const { stdout: stdout3, stderr: stderr3 } = await runCli([
+      "send_prompt",
+      "unstake my entire USDC balance from the fluid vault on Base",
+    ]);
+    console.log(stdout3);
+    console.error(stderr3);
+    expect(stdout3).toContain("Sending prompt...");
+    expect(stdout3).toContain("Delegation requested");
+    expect(stdout3).toContain("Creating subdelegation...");
+    expect(stdout3).toContain("Signing subdelegation...");
+    expect(stdout3).toContain("Sending signed delegation...");
+
+    const usdcAfterUnstake = await basePublicClient.readContract({
+      address: USDC_ADDRESS,
+      abi: ERC20_ABI,
+      functionName: "balanceOf",
+      args: [smartAccountAddress],
+    });
+    console.log(`Smart account USDC balance after unstaking: ${formatUnits(usdcAfterUnstake, 6)} USDC`);
+    expect(usdcAfterUnstake).toBeGreaterThan(usdcAfterStake);
   });
 });
