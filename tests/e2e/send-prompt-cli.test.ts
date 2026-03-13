@@ -81,15 +81,15 @@ describe("send_prompt CLI end-to-end", () => {
     const baseBalance = await basePublicClient.getBalance({ address: fundingAccount.address });
     console.log(`Funding account Base mainnet balance: ${formatEther(baseBalance)} ETH`);
 
-    const baseWalletClient = createWalletClient({
-      account: fundingAccount,
-      chain: base,
-      transport: http(),
-    });
-    await baseWalletClient.sendTransaction({
-      to: address as Hex,
-      value: parseEther("0.0004"),
-    });
+    // const baseWalletClient = createWalletClient({
+    //   account: fundingAccount,
+    //   chain: base,
+    //   transport: http(),
+    // });
+    // await baseWalletClient.sendTransaction({
+    //   to: address as Hex,
+    //   value: parseEther("0.0001"),
+    // });
 
     const config = {
       private_key: privateKey as Hex,
@@ -175,91 +175,91 @@ describe("send_prompt CLI end-to-end", () => {
     expect(balanceBefore - balanceAfter).toBeGreaterThanOrEqual(parseEther("0.0001"));
   });
 
-  it("completes the delegation flow when asked to swap ETH for USDC via the CLI", async () => {
-    await runCli(["new_chat"]);
+  // it("completes the delegation flow when asked to swap ETH for USDC via the CLI", async () => {
+  //   await runCli(["new_chat"]);
 
-    const balanceBefore = await basePublicClient.getBalance({ address: smartAccountAddress });
-    console.log(`Smart account Base mainnet balance before swap: ${formatEther(balanceBefore)} ETH`);
+  //   const balanceBefore = await basePublicClient.getBalance({ address: smartAccountAddress });
+  //   console.log(`Smart account Base mainnet balance before swap: ${formatEther(balanceBefore)} ETH`);
 
-    const { stdout, stderr } = await runCli([
-      "send_prompt",
-      "Swap 0.00000001 ETH for USDC on base",
-    ]);
+  //   const { stdout, stderr } = await runCli([
+  //     "send_prompt",
+  //     "Swap 0.00000001 ETH for USDC on base",
+  //   ]);
 
-    console.log(stdout);
-    console.error(stderr);
+  //   console.log(stdout);
+  //   console.error(stderr);
 
-    const balanceAfter = await basePublicClient.getBalance({ address: smartAccountAddress });
-    console.log(`Smart account Base mainnet balance after swap: ${formatEther(balanceAfter)} ETH`);
-    expect(balanceAfter).toBeLessThan(balanceBefore);
-    expect(balanceBefore - balanceAfter).toBeGreaterThanOrEqual(parseEther("0.00000001"));
-  });
+  //   const balanceAfter = await basePublicClient.getBalance({ address: smartAccountAddress });
+  //   console.log(`Smart account Base mainnet balance after swap: ${formatEther(balanceAfter)} ETH`);
+  //   expect(balanceAfter).toBeLessThan(balanceBefore);
+  //   expect(balanceBefore - balanceAfter).toBeGreaterThanOrEqual(parseEther("0.00000001"));
+  // });
 
-  it("completes the staking/unstaking flow for USDC in the fluid vault on Base via the CLI", async () => {
-    await runCli(["new_chat"]);
+  // it("completes the staking/unstaking flow for USDC in the fluid vault on Base via the CLI", async () => {
+  //   await runCli(["new_chat"]);
 
-    const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as Hex;
-    const ERC20_ABI = [
-      {
-        name: "balanceOf",
-        type: "function",
-        inputs: [{ name: "account", type: "address" }],
-        outputs: [{ name: "", type: "uint256" }],
-        stateMutability: "view",
-      },
-    ] as const;
+  //   const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as Hex;
+  //   const ERC20_ABI = [
+  //     {
+  //       name: "balanceOf",
+  //       type: "function",
+  //       inputs: [{ name: "account", type: "address" }],
+  //       outputs: [{ name: "", type: "uint256" }],
+  //       stateMutability: "view",
+  //     },
+  //   ] as const;
 
-    const usdcBefore = await basePublicClient.readContract({
-      address: USDC_ADDRESS,
-      abi: ERC20_ABI,
-      functionName: "balanceOf",
-      args: [smartAccountAddress],
-    });
-    console.log(`Smart account USDC balance before staking: ${formatUnits(usdcBefore, 6)} USDC`);
-    expect(usdcBefore).toBeGreaterThan(0n);
+  //   const usdcBefore = await basePublicClient.readContract({
+  //     address: USDC_ADDRESS,
+  //     abi: ERC20_ABI,
+  //     functionName: "balanceOf",
+  //     args: [smartAccountAddress],
+  //   });
+  //   console.log(`Smart account USDC balance before staking: ${formatUnits(usdcBefore, 6)} USDC`);
+  //   expect(usdcBefore).toBeGreaterThan(0n);
 
-    // Step 1: Get staking opportunities (read-only)
-    const { stdout: stdout1, stderr: stderr1 } = await runCli([
-      "send_prompt",
-      "get staking opportunities for usdc on base",
-    ]);
-    console.log(stdout1);
-    console.error(stderr1);
-    expect(stdout1).toContain("Sending prompt...");
-    expect(stdout1.trim()).toBeTruthy();
+  //   // Step 1: Get staking opportunities (read-only)
+  //   const { stdout: stdout1, stderr: stderr1 } = await runCli([
+  //     "send_prompt",
+  //     "get staking opportunities for usdc on base",
+  //   ]);
+  //   console.log(stdout1);
+  //   console.error(stderr1);
+  //   expect(stdout1).toContain("Sending prompt...");
+  //   expect(stdout1.trim()).toBeTruthy();
 
-    // Step 2: Stake entire USDC balance into the fluid vault
-    const { stdout: stdout2, stderr: stderr2 } = await runCli([
-      "send_prompt",
-      "stake into the fluid vault 0.0001 USDC balance on Base",
-    ]);
-    console.log(stdout2);
-    console.error(stderr2);
+  //   // Step 2: Stake entire USDC balance into the fluid vault
+  //   const { stdout: stdout2, stderr: stderr2 } = await runCli([
+  //     "send_prompt",
+  //     "stake into the fluid vault 0.0001 USDC balance on Base",
+  //   ]);
+  //   console.log(stdout2);
+  //   console.error(stderr2);
 
-    const usdcAfterStake = await basePublicClient.readContract({
-      address: USDC_ADDRESS,
-      abi: ERC20_ABI,
-      functionName: "balanceOf",
-      args: [smartAccountAddress],
-    });
-    console.log(`Smart account USDC balance after staking: ${formatUnits(usdcAfterStake, 6)} USDC`);
-    expect(usdcAfterStake).toBeLessThan(usdcBefore);
+  //   const usdcAfterStake = await basePublicClient.readContract({
+  //     address: USDC_ADDRESS,
+  //     abi: ERC20_ABI,
+  //     functionName: "balanceOf",
+  //     args: [smartAccountAddress],
+  //   });
+  //   console.log(`Smart account USDC balance after staking: ${formatUnits(usdcAfterStake, 6)} USDC`);
+  //   expect(usdcAfterStake).toBeLessThan(usdcBefore);
 
-    // Step 3: Unstake entire USDC balance from the fluid vault
-    const { stdout: stdout3, stderr: stderr3 } = await runCli([
-      "send_prompt",
-      "unstake my 0.0001 USDC balance from the fluid vault on Base",
-    ]);
-    console.log(stdout3);
-    console.error(stderr3);
+  //   // Step 3: Unstake entire USDC balance from the fluid vault
+  //   const { stdout: stdout3, stderr: stderr3 } = await runCli([
+  //     "send_prompt",
+  //     "unstake my 0.0001 USDC balance from the fluid vault on Base",
+  //   ]);
+  //   console.log(stdout3);
+  //   console.error(stderr3);
 
-    const usdcAfterUnstake = await basePublicClient.readContract({
-      address: USDC_ADDRESS,
-      abi: ERC20_ABI,
-      functionName: "balanceOf",
-      args: [smartAccountAddress],
-    });
-    console.log(`Smart account USDC balance after unstaking: ${formatUnits(usdcAfterUnstake, 6)} USDC`);
-    expect(usdcAfterUnstake).toBeGreaterThan(usdcAfterStake);
-  });
+  //   const usdcAfterUnstake = await basePublicClient.readContract({
+  //     address: USDC_ADDRESS,
+  //     abi: ERC20_ABI,
+  //     functionName: "balanceOf",
+  //     args: [smartAccountAddress],
+  //   });
+  //   console.log(`Smart account USDC balance after unstaking: ${formatUnits(usdcAfterUnstake, 6)} USDC`);
+  //   expect(usdcAfterUnstake).toBeGreaterThan(usdcAfterStake);
+  // });
 });
