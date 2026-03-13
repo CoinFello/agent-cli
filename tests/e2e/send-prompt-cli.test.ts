@@ -71,10 +71,11 @@ describe("send_prompt CLI end-to-end", () => {
       chain: baseSepolia,
       transport: http(),
     });
-    await walletClient.sendTransaction({
+    const txHash = await walletClient.sendTransaction({
       to: address as Hex,
       value: parseEther("0.002"),
     });
+    await sepoliaPublicClient.waitForTransactionReceipt({ hash: txHash });
 
     // Fund the smart account on Base mainnet (swaps only work on real Base)
     const baseBalance = await basePublicClient.getBalance({ address: fundingAccount.address });
@@ -97,6 +98,7 @@ describe("send_prompt CLI end-to-end", () => {
     };
 
     await signInWithAgent(SIWE_BASE_URL, config);
+    await new Promise((resolve)=>setTimeout(()=>{resolve(1)}, 4000))
   });
 
   afterAll(async () => {
@@ -158,6 +160,7 @@ describe("send_prompt CLI end-to-end", () => {
     expect(balanceAfterFirst).toBeLessThan(balanceBefore);
     expect(balanceBefore - balanceAfterFirst).toBeGreaterThanOrEqual(parseEther("0.0001"));
 
+    // now we check again which will use the deployed smart account sig flow
     const { stdout: stdout2, stderr: stderr2} = await runCli([
       "send_prompt",
       "send 0.0001 ETH on Base Sepolia to 0x000000000000000000000000000000000000dEaD",
