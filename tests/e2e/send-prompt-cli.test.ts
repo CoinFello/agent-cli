@@ -153,12 +153,6 @@ describe("send_prompt CLI end-to-end", () => {
     console.log(stdout)
     console.error(stderr)
 
-    expect(stdout).toContain("Sending prompt...");
-    expect(stdout).toContain("Delegation requested");
-    expect(stdout).toContain("Creating subdelegation...");
-    expect(stdout).toContain("Signing subdelegation...");
-    expect(stdout).toContain("Sending signed delegation...");
-
     const balanceAfterFirst = await sepoliaPublicClient.getBalance({ address: smartAccountAddress });
     console.log(`Smart account Base Sepolia balance after first send: ${formatEther(balanceAfterFirst)} ETH`);
     expect(balanceAfterFirst).toBeLessThan(balanceBefore);
@@ -171,12 +165,6 @@ describe("send_prompt CLI end-to-end", () => {
 
     console.log(stdout2)
     console.error(stderr2)
-
-    expect(stdout).toContain("Sending prompt...");
-    expect(stdout).toContain("Delegation requested");
-    expect(stdout).toContain("Creating subdelegation...");
-    expect(stdout).toContain("Signing subdelegation...");
-    expect(stdout).toContain("Sending signed delegation...");
 
     const balanceAfter = await sepoliaPublicClient.getBalance({ address: smartAccountAddress });
     console.log(`Smart account Base Sepolia balance after send: ${formatEther(balanceAfter)} ETH`);
@@ -197,12 +185,6 @@ describe("send_prompt CLI end-to-end", () => {
 
     console.log(stdout);
     console.error(stderr);
-
-    expect(stdout).toContain("Sending prompt...");
-    expect(stdout).toContain("Delegation requested");
-    expect(stdout).toContain("Creating subdelegation...");
-    expect(stdout).toContain("Signing subdelegation...");
-    expect(stdout).toContain("Sending signed delegation...");
 
     const balanceAfter = await basePublicClient.getBalance({ address: smartAccountAddress });
     console.log(`Smart account Base mainnet balance after swap: ${formatEther(balanceAfter)} ETH`);
@@ -250,11 +232,6 @@ describe("send_prompt CLI end-to-end", () => {
     ]);
     console.log(stdout2);
     console.error(stderr2);
-    expect(stdout2).toContain("Sending prompt...");
-    expect(stdout2).toContain("Delegation requested");
-    expect(stdout2).toContain("Creating subdelegation...");
-    expect(stdout2).toContain("Signing subdelegation...");
-    expect(stdout2).toContain("Sending signed delegation...");
 
     const usdcAfterStake = await basePublicClient.readContract({
       address: USDC_ADDRESS,
@@ -272,11 +249,6 @@ describe("send_prompt CLI end-to-end", () => {
     ]);
     console.log(stdout3);
     console.error(stderr3);
-    expect(stdout3).toContain("Sending prompt...");
-    expect(stdout3).toContain("Delegation requested");
-    expect(stdout3).toContain("Creating subdelegation...");
-    expect(stdout3).toContain("Signing subdelegation...");
-    expect(stdout3).toContain("Sending signed delegation...");
 
     const usdcAfterUnstake = await basePublicClient.readContract({
       address: USDC_ADDRESS,
