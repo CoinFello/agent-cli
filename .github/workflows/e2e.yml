@@ -34,3 +34,6 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           CI: true
+          RPC_API_KEY: ${{ secrets.RPC_API_KEY }}
+          RPC_BASE_URL: ${{ secrets.RPC_BASE_URL }}
+

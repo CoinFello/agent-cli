@@ -1,31 +1,38 @@
-import { createPublicClient as viemCreatePublicClient, http, type Chain } from 'viem'
+import { createPublicClient as viemCreatePublicClient, http, type Chain, Transport } from 'viem'
 
-const INFURA_API_KEY = process.env.INFURA_API_KEY ?? 'b6bf7d3508c941499b10025c0776eaf8'
+// @dev quicknode base url and api key
+const getBaseUrl = () => process.env.RPC_BASE_URL
+const getApiKey = () => process.env.RPC_API_KEY
 
-const INFURA_CHAIN_NAMES: Record<number, string> = {
-  1: 'mainnet',
-  11155111: 'sepolia',
-  137: 'polygon-mainnet',
-  80002: 'polygon-amoy',
-  42161: 'arbitrum-mainnet',
-  421614: 'arbitrum-sepolia',
-  10: 'optimism-mainnet',
-  11155420: 'optimism-sepolia',
-  8453: 'base-mainnet',
-  84532: 'base-sepolia',
-  59144: 'linea-mainnet',
-  59141: 'linea-sepolia',
-  43114: 'avalanche-mainnet',
-  43113: 'avalanche-fuji',
-  56: 'bsc-mainnet',
-  97: 'bsc-testnet',
+const QUICKNODE_SLUGS: Record<number, string> = {
+  1: '',
+  137: '.matic',
+  56: '.bsc',
+  59144: '.linea-mainnet',
+  8453: '.base-mainnet',
+  10: '.optimism',
+  42161: '.arbitrum-mainnet',
+  11155111: '.ethereum-sepolia',
+}
+
+/**
+ * Returns an `http()` transport using the paid QuickNode RPC for the given chain.
+ * Falls back to the default public RPC if the chain has no QuickNode endpoint configured.
+ */
+export function getChainTransport(chainId: number): Transport {
+  // Local development/testing: route all RPC calls through local anvil
+  if (process.env.ANVIL_RPC_URL) {
+    return http(process.env.ANVIL_RPC_URL)
+  }
+  const slug = QUICKNODE_SLUGS[chainId]
+  if (slug === undefined) {
+    return http()
+  }
+  return http(`${getBaseUrl()}${slug}.quiknode.pro/${getApiKey()}`)
 }
 
 export function createPublicClient(chain: Chain) {
-  const infuraName = INFURA_CHAIN_NAMES[chain.id]
-  const transport = infuraName
-    ? http(`https://${infuraName}.infura.io/v3/${INFURA_API_KEY}`)
-    : http()
+  const transport = getBaseUrl() && getApiKey() ? getChainTransport(chain.id) : http()
 
   return viemCreatePublicClient({ chain, transport })
 }
