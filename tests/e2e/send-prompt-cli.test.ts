@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { type Hex, createPublicClient, createWalletClient, formatEther, formatUnits, http, parseEther } from "viem";
+import { type Hex, createPublicClient, createWalletClient, formatEther, http, parseEther } from "viem";
 import { base, baseSepolia } from "viem/chains";
 import { createSmartAccount } from "../../src/account.js";
 import { returnRemainingFunds } from "./services.js";
@@ -10,6 +10,7 @@ import { BASE_URL } from "../../src/api.js";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { getChainTransport } from "../../src/services/createPublicClient.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CLI_PATH = resolve(__dirname, "../../dist/index.js");
@@ -69,7 +70,7 @@ describe("send_prompt CLI end-to-end", () => {
     const walletClient = createWalletClient({
       account: fundingAccount,
       chain: baseSepolia,
-      transport: http(),
+      transport: getChainTransport(baseSepolia.id),
     });
     const txHash = await walletClient.sendTransaction({
       to: address as Hex,
@@ -81,15 +82,15 @@ describe("send_prompt CLI end-to-end", () => {
     const baseBalance = await basePublicClient.getBalance({ address: fundingAccount.address });
     console.log(`Funding account Base mainnet balance: ${formatEther(baseBalance)} ETH`);
 
-    // const baseWalletClient = createWalletClient({
-    //   account: fundingAccount,
-    //   chain: base,
-    //   transport: http(),
-    // });
-    // await baseWalletClient.sendTransaction({
-    //   to: address as Hex,
-    //   value: parseEther("0.0001"),
-    // });
+    const baseWalletClient = createWalletClient({
+      account: fundingAccount,
+      chain: base,
+      transport: getChainTransport(base.id),
+    });
+    await baseWalletClient.sendTransaction({
+      to: address as Hex,
+      value: parseEther("0.000000001"),
+    });
 
     const config = {
       private_key: privateKey as Hex,
@@ -175,25 +176,25 @@ describe("send_prompt CLI end-to-end", () => {
     expect(balanceBefore - balanceAfter).toBeGreaterThanOrEqual(parseEther("0.0001"));
   });
 
-  // it("completes the delegation flow when asked to swap ETH for USDC via the CLI", async () => {
-  //   await runCli(["new_chat"]);
+  it("completes the delegation flow when asked to swap ETH for USDC via the CLI", async () => {
+    await runCli(["new_chat"]);
 
-  //   const balanceBefore = await basePublicClient.getBalance({ address: smartAccountAddress });
-  //   console.log(`Smart account Base mainnet balance before swap: ${formatEther(balanceBefore)} ETH`);
+    const balanceBefore = await basePublicClient.getBalance({ address: smartAccountAddress });
+    console.log(`Smart account Base mainnet balance before swap: ${formatEther(balanceBefore)} ETH`);
 
-  //   const { stdout, stderr } = await runCli([
-  //     "send_prompt",
-  //     "Swap 0.00000001 ETH for USDC on base",
-  //   ]);
+    const { stdout, stderr } = await runCli([
+      "send_prompt",
+      "Swap 0.0000000001 ETH for USDC on base",
+    ]);
 
-  //   console.log(stdout);
-  //   console.error(stderr);
+    console.log(stdout);
+    console.error(stderr);
 
-  //   const balanceAfter = await basePublicClient.getBalance({ address: smartAccountAddress });
-  //   console.log(`Smart account Base mainnet balance after swap: ${formatEther(balanceAfter)} ETH`);
-  //   expect(balanceAfter).toBeLessThan(balanceBefore);
-  //   expect(balanceBefore - balanceAfter).toBeGreaterThanOrEqual(parseEther("0.00000001"));
-  // });
+    const balanceAfter = await basePublicClient.getBalance({ address: smartAccountAddress });
+    console.log(`Smart account Base mainnet balance after swap: ${formatEther(balanceAfter)} ETH`);
+    expect(balanceAfter).toBeLessThan(balanceBefore);
+    expect(balanceBefore - balanceAfter).toBeGreaterThanOrEqual(parseEther("0.00000001"));
+  });
 
   // it("completes the staking/unstaking flow for USDC in the fluid vault on Base via the CLI", async () => {
   //   await runCli(["new_chat"]);
