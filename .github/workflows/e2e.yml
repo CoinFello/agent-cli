@@ -29,6 +29,13 @@ jobs:
         run: |
           echo "PRIVATE_KEY=${{ secrets.PRIVATE_KEY }}" >> .env 
 
+      - name: Add other env secrets
+        run: |
+          echo "PRIVATE_KEY=${{ secrets.PRIVATE_KEY }}" >> .env && \
+            echo "CI='true'" >> .env && \
+            echo "RPC_API_KEY=${{ secrets.RPC_API_KEY }}" >> .env && \
+            echo "RPC_BASE_URL=${{ secrets.RPC_BASE_URL }}" >> .env
+
       - name: Run e2e tests
         run: pnpm test:e2e
         env:
