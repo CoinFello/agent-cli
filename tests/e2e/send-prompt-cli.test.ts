@@ -1,9 +1,10 @@
 import "dotenv/config";
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { type Hex, createPublicClient, createWalletClient, formatEther, formatUnits, http, parseEther } from "viem";
 import { base, baseSepolia } from "viem/chains";
 import { createSmartAccount } from "../../src/account.js";
+import { returnRemainingFunds } from "./services.js";
 import { signInWithAgent } from "../../src/siwe.js";
 import { BASE_URL } from "../../src/api.js";
 import { spawn } from "node:child_process";
@@ -51,9 +52,10 @@ const basePublicClient = createPublicClient({
 
 describe("send_prompt CLI end-to-end", () => {
   let smartAccountAddress: Hex;
+  let privateKey: Hex;
 
   beforeAll(async () => {
-    const privateKey = generatePrivateKey();
+    privateKey = generatePrivateKey();
     const { address } = await createSmartAccount(privateKey, CHAIN);
     smartAccountAddress = address as Hex;
 
@@ -85,7 +87,7 @@ describe("send_prompt CLI end-to-end", () => {
     });
     await baseWalletClient.sendTransaction({
       to: address as Hex,
-      value: parseEther("0.00000002"),
+      value: parseEther("0.0004"),
     });
 
     const config = {
@@ -96,6 +98,36 @@ describe("send_prompt CLI end-to-end", () => {
 
     await signInWithAgent(SIWE_BASE_URL, config);
   });
+
+  afterAll(async () => {
+    const fundingAddress = privateKeyToAccount(process.env.PRIVATE_KEY as Hex).address;
+
+    try {
+      await returnRemainingFunds({
+        privateKey,
+        chain: baseSepolia,
+        publicClient: sepoliaPublicClient,
+        smartAccountAddress,
+        fundingAddress,
+        ethGasBuffer: parseEther("0.0005"),
+      });
+    } catch (err) {
+      console.error("Cleanup (Base Sepolia) failed:", err);
+    }
+
+    try {
+      await returnRemainingFunds({
+        privateKey,
+        chain: base,
+        publicClient: basePublicClient,
+        smartAccountAddress,
+        fundingAddress,
+        ethGasBuffer: parseEther("0.00001"),
+      });
+    } catch (err) {
+      console.error("Cleanup (Base mainnet) failed:", err);
+    }
+  }, 120_000);
 
   it("returns a text response for a read-only prompt via the CLI", async () => {
     await runCli(["new_chat"]);
