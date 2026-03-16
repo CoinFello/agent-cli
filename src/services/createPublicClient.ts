@@ -29,7 +29,8 @@ export function getChainTransport(chainId: number): Transport {
   if (slug === undefined) {
     return http()
   }
-  return http(`${getBaseUrl()}${slug}.quiknode.pro/${getApiKey()}`)
+  const rpcUrl = `${getBaseUrl()}${slug}.quiknode.pro/${getApiKey()}`
+  return http(rpcUrl)
 }
 
 export function createPublicClient(chain: Chain) {
