@@ -70,6 +70,7 @@ describe("send_prompt CLI end-to-end", () => {
     beforeAll(async () => {
       const { address } = await createSmartAccount(testnetPrivateKey, "baseSepolia");
       testnetSmartAcctAddress = address as Hex
+      console.log('new testnet smart account address ', testnetSmartAcctAddress)
 
       // Fund the smart account with 0.002 Base Sepolia ETH
       if (!process.env.PRIVATE_KEY){
@@ -135,9 +136,9 @@ describe("send_prompt CLI end-to-end", () => {
 
       console.log(stdout)
       console.error(stderr)
-      
+
       // wait for 2 blocks so balance check gets fresh data
-      await new Promise((resolve)=>setTimeout(()=>{resolve(1)}, 4000))
+      await new Promise((resolve)=>setTimeout(()=>{resolve(1)}, 6000))
 
       const balanceAfterFirst = await sepoliaPublicClient.getBalance({ address: testnetSmartAcctAddress });
       console.log(`Smart account Base Sepolia balance after first send: ${formatEther(balanceAfterFirst)} ETH`);
@@ -152,6 +153,9 @@ describe("send_prompt CLI end-to-end", () => {
 
       console.log(stdout2)
       console.error(stderr2)
+
+      // wait for 2 blocks so balance check gets fresh data
+      await new Promise((resolve)=>setTimeout(()=>{resolve(1)}, 6000))
 
       const balanceAfter = await sepoliaPublicClient.getBalance({ address: testnetSmartAcctAddress });
       console.log(`Smart account Base Sepolia balance after send: ${formatEther(balanceAfter)} ETH`);
