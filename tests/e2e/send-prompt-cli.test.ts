@@ -135,6 +135,9 @@ describe("send_prompt CLI end-to-end", () => {
 
       console.log(stdout)
       console.error(stderr)
+      
+      // wait for 2 blocks so balance check gets fresh data
+      await new Promise((resolve)=>setTimeout(()=>{resolve(1)}, 4000))
 
       const balanceAfterFirst = await sepoliaPublicClient.getBalance({ address: testnetSmartAcctAddress });
       console.log(`Smart account Base Sepolia balance after first send: ${formatEther(balanceAfterFirst)} ETH`);
