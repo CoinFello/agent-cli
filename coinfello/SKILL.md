@@ -13,6 +13,15 @@ metadata:
           description: 'Base URL for the CoinFello API server'
           required: false
           default: 'https://app.coinfello.com/'
+        - name: RPC_BASE_URL
+          description: 'QuickNode RPC base URL (e.g. https://your-endpoint-name)'
+          required: false
+        - name: RPC_API_KEY
+          description: 'QuickNode API key'
+          required: false
+        - name: RPC_URL_OVERRIDE
+          description: 'Custom RPC URL override for development/testing (overrides all other RPC settings)'
+          required: false
 ---
 
 # CoinFello CLI Skill
@@ -27,9 +36,16 @@ The CLI is available via `npx @coinfello/agent-cli@latest`. No manual build step
 
 ## Environment Variables
 
-| Variable             | Required | Default                      | Description                    |
-| -------------------- | -------- | ---------------------------- | ------------------------------ |
-| `COINFELLO_BASE_URL` | No       | `https://app.coinfello.com/` | Base URL for the CoinFello API |
+| Variable             | Required | Default                      | Description                                                                        |
+| -------------------- | -------- | ---------------------------- | ---------------------------------------------------------------------------------- |
+| `COINFELLO_BASE_URL` | No       | `https://app.coinfello.com/` | Base URL for the CoinFello API                                                     |
+| `RPC_BASE_URL`       | No       | —                            | QuickNode RPC base URL (e.g. `https://your-endpoint-name`)                         |
+| `RPC_API_KEY`        | No       | —                            | QuickNode API key                                                                  |
+| `RPC_URL_OVERRIDE`   | No       | —                            | Custom RPC URL override for development/testing (overrides all other RPC settings) |
+
+If both `RPC_BASE_URL` and `RPC_API_KEY` are set, the CLI routes RPC requests through QuickNode for supported chains (Ethereum, Polygon, BSC, Linea, Base, Base Sepolia, Optimism, Arbitrum, Ethereum Sepolia). If either is missing or the chain is not supported, it falls back to the chain's default public RPC.
+
+Set `RPC_URL_OVERRIDE` (e.g. `http://127.0.0.1:8545`) to route all RPC calls through a custom URL, regardless of chain or other RPC settings.
 
 ## Security Notice
 

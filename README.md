@@ -7,6 +7,22 @@ pnpm install
 pnpm build
 ```
 
+## RPC Configuration
+
+The CLI uses [QuickNode](https://www.quicknode.com/) as its RPC provider. Configure it via environment variables:
+
+| Variable | Required | Description |
+|---|---|---|
+| `RPC_BASE_URL` | Yes (for paid RPC) | QuickNode base URL (e.g. `https://your-endpoint-name`) |
+| `RPC_API_KEY` | Yes (for paid RPC) | QuickNode API key |
+| `RPC_URL_OVERRIDE` | No | Custom RPC URL override for development/testing (overrides all other RPC settings) |
+
+If `RPC_BASE_URL` and `RPC_API_KEY` are both set, the CLI routes requests through QuickNode for supported chains. If either is missing, it falls back to the chain's default public RPC.
+
+**Supported chains:** Ethereum (1), Polygon (137), BSC (56), Linea (59144), Base (8453), Base Sepolia (84532), Optimism (10), Arbitrum (42161), Ethereum Sepolia (11155111). Unsupported chains fall back to the default public RPC.
+
+**Local development:** Set `RPC_URL_OVERRIDE` (e.g. `http://127.0.0.1:8545`) to route all RPC calls through a custom URL, regardless of chain.
+
 ## Manual Testing
 
 You can run the CLI via `node dist/index.js` after building.

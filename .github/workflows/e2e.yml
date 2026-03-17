@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   e2e:
     runs-on: ubuntu-latest
@@ -29,8 +33,20 @@ jobs:
         run: |
           echo "PRIVATE_KEY=${{ secrets.PRIVATE_KEY }}" >> .env 
 
+      - name: Add other env secrets
+        run: |
+          echo "PRIVATE_KEY=${{ secrets.PRIVATE_KEY }}" >> .env && \
+            echo "CI='true'" >> .env && \
+            echo "RPC_API_KEY=${{ secrets.RPC_API_KEY }}" >> .env && \
+            echo "RPC_BASE_URL=${{ secrets.RPC_BASE_URL }}" >> .env && \
+            echo "PRIVATE_KEY_BASE_WALLET=${{ secrets.PRIVATE_KEY_BASE_WALLET }}" >> .env
+
       - name: Run e2e tests
         run: pnpm test:e2e
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           CI: true
+          RPC_API_KEY: ${{ secrets.RPC_API_KEY }}
+          RPC_BASE_URL: ${{ secrets.RPC_BASE_URL }}
+          PRIVATE_KEY_BASE_WALLET: ${{ secrets.PRIVATE_KEY_BASE_WALLET }}
+
