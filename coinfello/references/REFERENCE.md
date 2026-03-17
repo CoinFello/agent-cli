@@ -139,18 +139,20 @@ The server determines whether a delegation is needed and, if so, what scope and 
 
 ## Supported Chains
 
-Any chain exported by `viem/chains`. Common examples:
+Any chain exported by `viem/chains` is supported. Chains with a QuickNode slug configured get routed through the paid QuickNode RPC when `RPC_BASE_URL` and `RPC_API_KEY` are set; all others fall back to the chain's default public RPC.
 
-| Chain Name  | Chain ID | Network                  |
-| ----------- | -------- | ------------------------ |
-| `mainnet`   | 1        | Ethereum mainnet         |
-| `sepolia`   | 11155111 | Ethereum Sepolia testnet |
-| `polygon`   | 137      | Polygon PoS              |
-| `arbitrum`  | 42161    | Arbitrum One             |
-| `optimism`  | 10       | OP Mainnet               |
-| `base`      | 8453     | Base                     |
-| `avalanche` | 43114    | Avalanche C-Chain        |
-| `bsc`       | 56       | BNB Smart Chain          |
+| Chain Name    | Chain ID | Network                  | QuickNode Support |
+| ------------- | -------- | ------------------------ | ----------------- |
+| `mainnet`     | 1        | Ethereum mainnet         | Yes               |
+| `sepolia`     | 11155111 | Ethereum Sepolia testnet | Yes               |
+| `polygon`     | 137      | Polygon PoS              | Yes               |
+| `arbitrum`    | 42161    | Arbitrum One             | Yes               |
+| `optimism`    | 10       | OP Mainnet               | Yes               |
+| `base`        | 8453     | Base                     | Yes               |
+| `baseSepolia` | 84532    | Base Sepolia testnet     | Yes               |
+| `linea`       | 59144    | Linea mainnet            | Yes               |
+| `bsc`         | 56       | BNB Smart Chain          | Yes               |
+| `avalanche`   | 43114    | Avalanche C-Chain        | No (public RPC)   |
 
 ## API Endpoints
 
@@ -258,9 +260,18 @@ All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC 
 
 ## Environment Variables
 
-| Variable             | Required | Default                      | Description                    |
-| -------------------- | -------- | ---------------------------- | ------------------------------ |
-| `COINFELLO_BASE_URL` | No       | `https://app.coinfello.com/` | Base URL for the CoinFello API |
+| Variable             | Required | Default                      | Description                                                                    |
+| -------------------- | -------- | ---------------------------- | ------------------------------------------------------------------------------ |
+| `COINFELLO_BASE_URL` | No       | `https://app.coinfello.com/` | Base URL for the CoinFello API                                                 |
+| `RPC_BASE_URL`       | No       | —                            | QuickNode RPC base URL (e.g. `https://your-endpoint-name`)                     |
+| `RPC_API_KEY`        | No       | —                            | QuickNode API key                                                              |
+| `RPC_URL_OVERRIDE`      | No       | —                            | Custom RPC URL override for development/testing (overrides all other RPC settings) |
+
+**RPC resolution order:**
+
+1. If `RPC_URL_OVERRIDE` is set, all RPC calls go through the specified URL (any chain).
+2. If `RPC_BASE_URL` and `RPC_API_KEY` are both set and the chain has a QuickNode slug, requests use `{RPC_BASE_URL}{slug}.quiknode.pro/{RPC_API_KEY}`.
+3. Otherwise, the chain's default public RPC is used.
 
 ## Security Considerations
 

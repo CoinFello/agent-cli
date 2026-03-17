@@ -22,8 +22,8 @@ const QUICKNODE_SLUGS: Record<number, string> = {
  */
 export function getChainTransport(chainId: number): Transport {
   // Local development/testing: route all RPC calls through local anvil
-  if (process.env.ANVIL_RPC_URL) {
-    return http(process.env.ANVIL_RPC_URL)
+  if (process.env.RPC_URL_OVERRIDE) {
+    return http(process.env.RPC_URL_OVERRIDE)
   }
   const slug = QUICKNODE_SLUGS[chainId]
   if (slug === undefined) {
