@@ -51,18 +51,6 @@ const basePublicClient = createPublicClient({
 });
 
 describe("send_prompt CLI end-to-end", () => {
-
-  it("returns a text response for a read-only prompt via the CLI", async () => {
-    await runCli(["new_chat"]);
-    const { stdout, stderr, exitCode } = await runCli(["send_prompt", "hello"]);
-
-    console.log(stdout)
-    console.error(stderr)
-
-    expect(exitCode).toBe(0);
-    expect(stdout.trim()).toBeTruthy();
-  });
-
   describe('testnet', () => {
     const testnetPrivateKey = generatePrivateKey()
     let testnetSmartAcctAddress: Hex = '0x'
@@ -119,6 +107,19 @@ describe("send_prompt CLI end-to-end", () => {
         console.error("Cleanup (Base Sepolia) failed:", err);
       }
     }, 120_000);
+
+
+    // needs to happen after sign in and account creation
+    it("returns a text response for a read-only prompt via the CLI", async () => {
+      await runCli(["new_chat"]);
+      const { stdout, stderr, exitCode } = await runCli(["send_prompt", "hello"]);
+
+      console.log(stdout)
+      console.error(stderr)
+
+      expect(exitCode).toBe(0);
+      expect(stdout.trim()).toBeTruthy();
+    });
 
     /**
      * @dev tests deploying a new smart acct & sending eth in 1 txn
