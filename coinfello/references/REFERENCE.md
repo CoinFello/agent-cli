@@ -260,12 +260,12 @@ All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC 
 
 ## Environment Variables
 
-| Variable             | Required | Default                      | Description                                                                    |
-| -------------------- | -------- | ---------------------------- | ------------------------------------------------------------------------------ |
-| `COINFELLO_BASE_URL` | No       | `https://app.coinfello.com/` | Base URL for the CoinFello API                                                 |
-| `RPC_BASE_URL`       | No       | —                            | QuickNode RPC base URL (e.g. `https://your-endpoint-name`)                     |
-| `RPC_API_KEY`        | No       | —                            | QuickNode API key                                                              |
-| `RPC_URL_OVERRIDE`      | No       | —                            | Custom RPC URL override for development/testing (overrides all other RPC settings) |
+| Variable             | Required | Default                      | Description                                                                        |
+| -------------------- | -------- | ---------------------------- | ---------------------------------------------------------------------------------- |
+| `COINFELLO_BASE_URL` | No       | `https://app.coinfello.com/` | Base URL for the CoinFello API                                                     |
+| `RPC_BASE_URL`       | No       | —                            | QuickNode RPC base URL (e.g. `https://your-endpoint-name`)                         |
+| `RPC_API_KEY`        | No       | —                            | QuickNode API key                                                                  |
+| `RPC_URL_OVERRIDE`   | No       | —                            | Custom RPC URL override for development/testing (overrides all other RPC settings) |
 
 **RPC resolution order:**
 
