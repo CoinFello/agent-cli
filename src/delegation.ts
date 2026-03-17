@@ -24,6 +24,7 @@ export interface PendingDelegationRequest {
     chainId: string | number
     scope: RawScope
     [key: string]: unknown
+    justification?: string
   }
   callId: string
   chatId: string
@@ -66,6 +67,7 @@ export async function clearPendingDelegation(): Promise<void> {
 export function formatDelegationRequestForDisplay(request: PendingDelegationRequest): string {
   const { delegationArgs, callId, chatId, originalPrompt, createdAt } = request
   const scope = delegationArgs.scope
+  const justification = delegationArgs.justification
 
   const lines: string[] = [
     '=== Delegation Request ===',
@@ -87,6 +89,9 @@ export function formatDelegationRequestForDisplay(request: PendingDelegationRequ
   if (scope.valueLte?.maxValue) lines.push(`Value <= ${scope.valueLte.maxValue}`)
 
   lines.push(`Original prompt: "${originalPrompt}"`)
+  if (justification){
+    lines.push(`Justification: "${justification}"`)
+  }
   lines.push(`Requested at: ${createdAt}`)
   lines.push(`Chat ID: ${chatId}`)
   lines.push(`Call ID: ${callId}`)

@@ -64,7 +64,8 @@ Created by `send_prompt` when the server requests a delegation. Read and cleared
       "type": "erc20TransferAmount",
       "tokenAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
       "maxAmount": "5000000"
-    }
+    },
+    "justification": "Transfer 5 USDC to 0xRecipient on Base"
   },
   "callId": "call_abc123",
   "chatId": "chat_xyz789",
@@ -76,7 +77,7 @@ Created by `send_prompt` when the server requests a delegation. Read and cleared
 
 | Field            | Type     | Description                                                |
 | ---------------- | -------- | ---------------------------------------------------------- |
-| `delegationArgs` | `object` | Tool call arguments from the server (chainId, scope, etc.) |
+| `delegationArgs` | `object` | Tool call arguments from the server (chainId, scope, justification, etc.) |
 | `callId`         | `string` | Tool call ID from the `ask_for_delegation` response        |
 | `chatId`         | `string` | Chat session ID for conversation continuity                |
 | `originalPrompt` | `string` | The prompt that triggered the delegation request           |

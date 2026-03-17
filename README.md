@@ -121,6 +121,7 @@ Chain ID: 8453
 Token address: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
 Max amount: 5000000
 Original prompt: "send 5 USDC to 0xRecipient..."
+Justification: "Transfer 5 USDC to 0xRecipient on Base"
 Requested at: 2026-03-16T12:34:56.789Z
 Chat ID: chat_abc123
 Call ID: call_abc123
