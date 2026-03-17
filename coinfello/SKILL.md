@@ -54,7 +54,7 @@ This skill performs the following sensitive operations:
 - **Key generation and storage**: By default, `create_account` generates a hardware-backed P256 key in the **macOS Secure Enclave** (or TPM 2.0 where available). The private key never leaves the hardware and cannot be exported — only public key coordinates and a key tag are saved to `~/.clawdbot/skills/coinfello/config.json`. If hardware key support is not available, the CLI warns and falls back to a software private key. You can also explicitly opt into a plaintext software key by passing `--use-unsafe-private-key`, which stores a raw private key in the config file — **this is intended only for development and testing**.
 - **Signer daemon**: Running `signer-daemon start` authenticates once via Touch ID / password and caches the authorization. All subsequent signing operations reuse this cached context, eliminating repeated auth prompts. The daemon communicates over a user-scoped Unix domain socket with restricted permissions (`0600`). If the daemon is not running, signing operations fall back to direct execution (prompting Touch ID each time).
 - **Session token storage**: Running `sign_in` stores a SIWE session token in the same config file.
-- **Delegation signing**: Running `send_prompt` may automatically create and sign blockchain delegations based on server-requested scopes, then submit them to the CoinFello API.
+- **Delegation signing**: Running `send_prompt` may receive a delegation request from the server, which is saved to a local file. Running `approve_delegation_request` creates and signs the delegation, then submits it to the CoinFello API.
 
 Users should ensure they trust the CoinFello API endpoint configured via `COINFELLO_BASE_URL` before running delegation flows.
 
@@ -70,8 +70,11 @@ npx @coinfello/agent-cli@latest create_account
 # 3. Sign in to CoinFello with your smart account (SIWE)
 npx @coinfello/agent-cli@latest sign_in
 
-# 4. Send a natural language prompt — the server will request a delegation if needed
+# 4. Send a natural language prompt — if a delegation is needed, it will be saved for review
 npx @coinfello/agent-cli@latest send_prompt "send 5 USDC to 0xRecipient..."
+
+# 5. Approve the delegation request (if one was saved by send_prompt)
+npx @coinfello/agent-cli@latest approve_delegation_request
 ```
 
 ## Commands
@@ -148,7 +151,7 @@ npx @coinfello/agent-cli@latest signer-daemon stop     # Stop the daemon
 
 ### send_prompt
 
-Sends a natural language prompt to CoinFello. If the server requires a delegation to execute the action, the CLI creates and signs a subdelegation automatically based on the server's requested scope and chain.
+Sends a natural language prompt to CoinFello. If the server requires a delegation to execute the action, the CLI saves the delegation request to a local file and logs the details to the terminal for review. The delegation is **not** signed automatically — you must explicitly approve it with `approve_delegation_request`.
 
 ```bash
 npx @coinfello/agent-cli@latest send_prompt "<prompt>"
@@ -164,12 +167,27 @@ then you should call `npx @coinfello/agent-cli@latest new_chat` to start a new c
 2. If the server returns a read-only response (no `clientToolCalls` and no `txn_id`) → prints the response text and exits
 3. If the server returns a `txn_id` directly with no tool calls → prints it and exits
 4. If the server sends an `ask_for_delegation` client tool call with a `chainId` and `scope`:
-   - Fetches CoinFello's delegate address
-   - Rebuilds the smart account using the chain ID from the tool call
-   - Parses the server-provided scope (supports ERC-20, native token, ERC-721, and function call scopes)
-   - Creates and signs a subdelegation (wraps with ERC-6492 signature if the smart account is not yet deployed on-chain)
-   - Sends the signed delegation back as a `clientToolCallResponse` along with the `chatId` and `callId` from the initial response
-   - Returns a `txn_id` for tracking
+   - Saves the delegation request (scope, chain ID, call ID, chat ID) to `~/.clawdbot/skills/coinfello/pending_delegation.json`
+   - Logs a human-readable summary of the delegation request to the terminal
+   - Exits without signing — run `approve_delegation_request` to approve
+
+### approve_delegation_request
+
+Approves and signs a pending delegation request saved by `send_prompt`, then submits it to CoinFello.
+
+```bash
+npx @coinfello/agent-cli@latest approve_delegation_request
+```
+
+**What happens internally:**
+
+1. Reads the pending delegation from `~/.clawdbot/skills/coinfello/pending_delegation.json`
+2. Fetches CoinFello's delegate address
+3. Rebuilds the smart account using the chain ID from the delegation request
+4. Parses the scope and creates a subdelegation (wraps with ERC-6492 signature if the smart account is not yet deployed on-chain)
+5. Sends the signed delegation back as a `clientToolCallResponse` along with the `chatId` and `callId`
+6. Clears the pending delegation file
+7. Returns a `txn_id` for tracking
 
 ## Common Workflows
 
@@ -185,8 +203,11 @@ npx @coinfello/agent-cli@latest create_account
 # Sign in (required for delegation flows)
 npx @coinfello/agent-cli@latest sign_in
 
-# Send a natural language prompt — delegation is handled automatically
+# Send a natural language prompt — if a delegation is needed, it will be saved for review
 npx @coinfello/agent-cli@latest send_prompt "send 5 USDC to 0xRecipient..."
+
+# Review the delegation request logged to the terminal, then approve it
+npx @coinfello/agent-cli@latest approve_delegation_request
 ```
 
 ### Read-Only Prompt

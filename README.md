@@ -105,27 +105,55 @@ node dist/index.js new_chat
 
 ### 6. send_prompt
 
-Sends a natural language prompt to CoinFello. If the server requires a delegation to execute the action, the CLI creates and signs a subdelegation automatically based on the server's requested scope and chain. Requires `create_account` and `sign_in` to have been run first.
+Sends a natural language prompt to CoinFello. If the server requires a delegation to execute the action, the CLI saves the delegation request to a local file and logs the details to the terminal. The delegation is **not** signed or submitted automatically — you must explicitly approve it with `approve_delegation_request`. Requires `create_account` and `sign_in` to have been run first.
 
 ```bash
 node dist/index.js send_prompt "send 5 USDC to 0xRecipient..."
 ```
 
-Expected output:
+Expected output (when delegation is requested):
 
 ```
 Sending prompt...
-Delegation requested: scope=erc20, chainId=8453
+=== Delegation Request ===
+Scope type: erc20TransferAmount
+Chain ID: 8453
+Token address: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+Max amount: 5000000
+Original prompt: "send 5 USDC to 0xRecipient..."
+Requested at: 2026-03-16T12:34:56.789Z
+Chat ID: chat_abc123
+Call ID: call_abc123
+==========================
+Delegation request saved to: /home/<user>/.clawdbot/skills/coinfello/pending_delegation.json
+Run 'approve_delegation_request' to sign and submit this delegation.
+```
+
+### 7. approve_delegation_request
+
+Approves and signs a pending delegation request saved by `send_prompt`, then submits it to CoinFello.
+
+```bash
+node dist/index.js approve_delegation_request
+```
+
+Expected output:
+
+```
+Approving delegation request...
+=== Delegation Request ===
+...
+==========================
 Fetching CoinFello delegate address...
 Loading smart account...
 Creating subdelegation...
 Signing subdelegation...
 Sending signed delegation...
 Transaction submitted successfully.
-Transaction ID: <txn_hash_>
+Transaction ID: <txn_hash>
 ```
 
-### 7. signer-daemon
+### 8. signer-daemon
 
 Manages the Secure Enclave signing daemon. Without the daemon, each signing operation (account creation, sign-in, delegation signing) triggers a separate Touch ID / password prompt. Starting the daemon authenticates once and caches the authorization for subsequent operations.
 
