@@ -1,29 +1,24 @@
 import { Command } from 'commander'
-import {
-  createSmartAccount,
-  getSmartAccount,
-  createSmartAccountWithSecureEnclave,
-  getSmartAccountFromSecureEnclave,
-  createSubdelegation,
-  resolveChainInput,
-  type HybridSmartAccount,
-} from './account.js'
+import { createSmartAccount, createSmartAccountWithSecureEnclave } from './account.js'
 import { loadConfig, saveConfig, CONFIG_PATH } from './config.js'
-import { getCoinFelloAddress, sendConversation, BASE_URL_V1, BASE_URL } from './api.js'
+import { sendConversation, BASE_URL_V1, BASE_URL } from './api.js'
 import { loadSessionToken } from './cookies.js'
 import { signInWithAgent } from './siwe.js'
-import { parseScope } from './scope.js'
-import { serializeErc6492Signature, type Hex } from 'viem'
-import { createPublicClient } from './services/createPublicClient.js'
 import { generatePrivateKey } from 'viem/accounts'
 import type { Delegation } from '@metamask/smart-accounts-kit'
-import { SignedSubdelegation } from './types.js'
 import {
   isSecureEnclaveAvailable,
   startDaemon,
   stopDaemon,
   isDaemonRunning,
 } from './secure-enclave/index.js'
+import {
+  loadPendingDelegation,
+  clearPendingDelegation,
+  formatDelegationRequestForDisplay,
+  signAndSubmitDelegation,
+  handleConversationResponse,
+} from './delegation.js'
 import packageJson from '../package.json'
 
 const program = new Command()
@@ -187,7 +182,7 @@ program
 // ── send_prompt ─────────────────────────────────────────────────
 program
   .command('send_prompt')
-  .description('Send a prompt to CoinFello, creating a delegation if requested by the server')
+  .description('Send a prompt to CoinFello. If a delegation is requested, saves it for review.')
   .argument('<prompt>', 'The prompt to send')
   .action(async (prompt: string) => {
     try {
@@ -201,130 +196,55 @@ program
         process.exit(1)
       }
 
-      // Load persisted session token into cookie jar
       if (config.session_token) {
         await loadSessionToken(config.session_token, BASE_URL_V1)
       }
 
-      // 1. Send prompt-only to conversation endpoint
       console.log('Sending prompt...')
-      const initialResponse = await sendConversation({
+      const response = await sendConversation({
         prompt,
         chatId: config.chat_id,
       })
-      if (initialResponse.chatId && initialResponse.chatId !== config.chat_id) {
-        config.chat_id = initialResponse.chatId
-        await saveConfig(config)
-      }
 
-      // Read-only response: no tool calls and no transaction
-      if (!initialResponse.clientToolCalls?.length && !initialResponse.txn_id) {
-        console.log(initialResponse.responseText ?? '')
-        return
-      }
+      await handleConversationResponse(response, config, prompt)
+    } catch (err) {
+      console.error(`Failed to send prompt: ${(err as Error).message}`)
+      process.exit(1)
+    }
+  })
 
-      // If we got a direct txn_id with no tool calls, we're done
-      if (initialResponse.txn_id && !initialResponse.clientToolCalls?.length) {
-        console.log('Transaction submitted successfully.')
-        console.log(`Transaction ID: ${initialResponse.txn_id}`)
-        return
+// ── approve_delegation_request ─────────────────────────────────
+program
+  .command('approve_delegation_request')
+  .description('Approve and sign a pending delegation request, then submit it to CoinFello')
+  .action(async () => {
+    try {
+      const config = await loadConfig()
+      if (!config.smart_account_address) {
+        console.error("Error: No smart account found. Run 'create_account' first.")
+        process.exit(1)
       }
-
-      // 2. Look for ask_for_delegation tool call
-      const delegationToolCall = initialResponse.clientToolCalls?.find(
-        (tc) => tc.name === 'ask_for_delegation'
-      )
-      if (!delegationToolCall) {
-        console.error('Error: No delegation request received from the server.')
-        console.log('Response:', JSON.stringify(initialResponse, null, 2))
+      if (config.signer_type !== 'secureEnclave' && !config.private_key) {
+        console.error("Error: No private key found in config. Run 'create_account' first.")
         process.exit(1)
       }
 
-      // 3. Parse tool call arguments
-      /* eslint-disable-next-line */
-      const args = JSON.parse(delegationToolCall.arguments) as any
-      console.log(`Delegation requested: scope=${args.scope.type}, chainId=${args.chainId}`)
+      const pending = await loadPendingDelegation()
 
-      // 4. Get CoinFello delegate address
-      console.log('Fetching CoinFello delegate address...')
-      const delegateAddress = await getCoinFelloAddress()
+      console.log('Approving delegation request...')
+      console.log(formatDelegationRequestForDisplay(pending))
 
-      // 5. Rebuild smart account using chainId from tool call
-      console.log('Loading smart account...')
-      let smartAccount: HybridSmartAccount
-      if (config.signer_type === 'secureEnclave') {
-        if (!config.secure_enclave) {
-          console.error("Error: Secure Enclave config missing. Run 'create_account' first.")
-          process.exit(1)
-        }
-        smartAccount = await getSmartAccountFromSecureEnclave(
-          config.secure_enclave.key_tag,
-          config.secure_enclave.public_key_x,
-          config.secure_enclave.public_key_y,
-          config.secure_enclave.key_id as Hex,
-          args.chainId
-        )
-      } else {
-        smartAccount = await getSmartAccount(config.private_key as Hex, args.chainId)
+      if (config.session_token) {
+        await loadSessionToken(config.session_token, BASE_URL_V1)
       }
 
-      // 6. Parse scope and create subdelegation
-      const scope = parseScope(args.scope)
-      console.log('Creating subdelegation...')
-      const subdelegation = createSubdelegation({
-        smartAccount,
-        delegateAddress: delegateAddress as Hex,
-        scope,
-      })
+      const finalResponse = await signAndSubmitDelegation(config, pending)
 
-      // 7. Sign the subdelegation
-      console.log('Signing subdelegation... ', JSON.stringify(subdelegation, null, 4))
-      const signature = await smartAccount.signDelegation({
-        delegation: subdelegation,
-      })
-      console.log('Signed subdelegation')
-      let sig = signature
-      const chain = resolveChainInput(args.chainId)
+      await clearPendingDelegation()
 
-      const publicClient = createPublicClient(chain)
-      console.log('Getting code...')
-      const code = await publicClient.getCode({ address: smartAccount.address })
-      console.log('code is ', code)
-      const isDeployed = !!(code && code !== '0x')
-      if (!isDeployed) {
-        console.log('Getting factory args...')
-        const factoryArgs = await smartAccount.getFactoryArgs()
-        console.log('factory args ', JSON.stringify(factoryArgs, null, 4))
-        if (factoryArgs.factory && factoryArgs.factoryData) {
-          sig = serializeErc6492Signature({
-            signature,
-            address: factoryArgs.factory as `0x${string}`,
-            data: factoryArgs.factoryData as `0x${string}`,
-          })
-          console.log('Serialized 6492 sig')
-        }
-      }
-
-      const signedSubdelegation: SignedSubdelegation = { ...subdelegation, signature: sig }
-
-      // 8. Send signed delegation back to conversation endpoint
-      console.log('Sending signed delegation...')
-      const finalResponse = await sendConversation({
-        prompt: 'Please refer to the previous conversation messages and redeem this delegation.',
-        signedSubdelegation,
-        chatId: initialResponse.chatId,
-        delegationArguments: JSON.stringify(args),
-        callId: delegationToolCall.callId,
-      })
-
-      if (finalResponse.txn_id) {
-        console.log('Transaction submitted successfully.')
-        console.log(`Transaction ID: ${finalResponse.txn_id}`)
-      } else {
-        console.log('Final Response:', JSON.stringify(finalResponse, null, 2))
-      }
+      await handleConversationResponse(finalResponse, config, pending.originalPrompt)
     } catch (err) {
-      console.error(`Failed to send prompt: ${(err as Error).message}`)
+      console.error(`Failed to approve delegation: ${(err as Error).message}`)
       process.exit(1)
     }
   })

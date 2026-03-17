@@ -18,7 +18,7 @@ export interface Config {
   }
 }
 
-const CONFIG_DIR = join(homedir(), '.clawdbot', 'skills', 'coinfello')
+export const CONFIG_DIR = join(homedir(), '.clawdbot', 'skills', 'coinfello')
 export const CONFIG_PATH = join(CONFIG_DIR, 'config.json')
 
 export async function loadConfig(): Promise<Config> {

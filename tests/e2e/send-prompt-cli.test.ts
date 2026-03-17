@@ -130,6 +130,7 @@ describe("send_prompt CLI end-to-end", () => {
       const balanceBefore = await sepoliaPublicClient.getBalance({ address: testnetSmartAcctAddress });
       console.log(`Smart account Base Sepolia balance before send: ${formatEther(balanceBefore)} ETH`);
 
+      // Step 1: send_prompt saves delegation request
       const { stdout, stderr} = await runCli([
         "send_prompt",
         "send 0.0001 ETH on Base Sepolia to 0x000000000000000000000000000000000000dEaD",
@@ -137,6 +138,16 @@ describe("send_prompt CLI end-to-end", () => {
 
       console.log(stdout)
       console.error(stderr)
+      expect(stdout).toContain("Delegation Request");
+      expect(stdout).toContain("approve_delegation_request");
+
+      // Step 2: approve_delegation_request signs and submits
+      const { stdout: approveOut, stderr: approveErr } = await runCli([
+        "approve_delegation_request",
+      ]);
+
+      console.log(approveOut)
+      console.error(approveErr)
 
       // wait for 2 blocks so balance check gets fresh data
       await new Promise((resolve)=>setTimeout(()=>{resolve(1)}, 6000))
@@ -154,6 +165,13 @@ describe("send_prompt CLI end-to-end", () => {
 
       console.log(stdout2)
       console.error(stderr2)
+
+      const { stdout: approveOut2, stderr: approveErr2 } = await runCli([
+        "approve_delegation_request",
+      ]);
+
+      console.log(approveOut2)
+      console.error(approveErr2)
 
       // wait for 2 blocks so balance check gets fresh data
       await new Promise((resolve)=>setTimeout(()=>{resolve(1)}, 6000))
@@ -206,18 +224,31 @@ describe("send_prompt CLI end-to-end", () => {
       console.log(stdout);
       console.error(stderr);
 
+      const { stdout: approveOut, stderr: approveErr } = await runCli([
+        "approve_delegation_request",
+      ]);
+
+      console.log(approveOut);
+      console.error(approveErr);
+
       const balanceAfter = await basePublicClient.getBalance({ address: baseSmartAccountAddress });
       console.log(`Smart account Base mainnet balance after swap: ${formatEther(balanceAfter)} ETH`);
       expect(balanceAfter).toBeLessThan(balanceBefore);
       expect(balanceBefore - balanceAfter).toBeGreaterThanOrEqual(parseEther("0.00000001"));
 
-      // clean up 
+      // clean up
       const { stdout: stdoutCleanup, stderr: stderrCleanup } = await runCli([
         "send_prompt",
         "Swap 0.2 USDC for ETH on base",
       ]);
       console.log(stdoutCleanup);
       console.error(stderrCleanup);
+
+      const { stdout: cleanupApproveOut, stderr: cleanupApproveErr } = await runCli([
+        "approve_delegation_request",
+      ]);
+      console.log(cleanupApproveOut);
+      console.error(cleanupApproveErr);
     });
 
     it("completes the staking/unstaking flow for USDC in the fluid vault on Base via the CLI", async () => {
@@ -253,14 +284,20 @@ describe("send_prompt CLI end-to-end", () => {
       expect(stdout1).toContain("Sending prompt...");
       expect(stdout1.trim()).toBeTruthy();
 
-      // Step 2: Stake entire USDC balance into the fluid vault
+      // Step 2: Stake USDC into the fluid vault (send_prompt + approve)
       const { stdout: stdout2, stderr: stderr2 } = await runCli([
         "send_prompt",
         "stake 2 USDC into the fluid vault on Base",
       ]);
       console.log(stdout2);
       console.error(stderr2);
-      
+
+      const { stdout: stakeApproveOut, stderr: stakeApproveErr } = await runCli([
+        "approve_delegation_request",
+      ]);
+      console.log(stakeApproveOut);
+      console.error(stakeApproveErr);
+
       // wait for 2 blocks so balance check gets fresh data
       await new Promise((resolve)=>setTimeout(()=>{resolve(1)}, 4000))
 
@@ -273,14 +310,20 @@ describe("send_prompt CLI end-to-end", () => {
       console.log(`Smart account USDC balance after staking: ${formatUnits(usdcAfterStake, 6)} USDC`);
       expect(usdcAfterStake).toBeLessThan(usdcBefore);
 
-      // Step 3: Unstake entire USDC balance from the fluid vault
+      // Step 3: Unstake USDC from the fluid vault (send_prompt + approve)
       const { stdout: stdout3, stderr: stderr3 } = await runCli([
         "send_prompt",
         "swap ALL of my FUSDC to USDC on Base",
       ]);
       console.log(stdout3);
       console.error(stderr3);
-      
+
+      const { stdout: unstakeApproveOut, stderr: unstakeApproveErr } = await runCli([
+        "approve_delegation_request",
+      ]);
+      console.log(unstakeApproveOut);
+      console.error(unstakeApproveErr);
+
       // wait for 2 blocks so balance check gets fresh data
       await new Promise((resolve)=>setTimeout(()=>{resolve(1)}, 4000))
 

@@ -50,6 +50,40 @@ Created automatically by `create_account`. The schema depends on the signer type
 | `delegation`                  | `object` | `set_delegation` | Optional stored delegation                                                                          |
 | `chat_id`                     | `string` | `send_prompt`    | Persisted conversation chat ID reused across prompts; removed by `new_chat`                         |
 
+## Pending Delegation File
+
+Location: `~/.clawdbot/skills/coinfello/pending_delegation.json`
+
+Created by `send_prompt` when the server requests a delegation. Read and cleared by `approve_delegation_request`.
+
+```json
+{
+  "delegationArgs": {
+    "chainId": 8453,
+    "scope": {
+      "type": "erc20TransferAmount",
+      "tokenAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "maxAmount": "5000000"
+    },
+    "justification": "Transfer 5 USDC to 0xRecipient on Base"
+  },
+  "callId": "call_abc123",
+  "chatId": "chat_xyz789",
+  "originalPrompt": "send 5 USDC to 0xRecipient...",
+  "createdAt": "2026-03-16T12:34:56.789Z",
+  "description": "Delegation for scope=erc20TransferAmount, chainId=8453"
+}
+```
+
+| Field            | Type     | Description                                                               |
+| ---------------- | -------- | ------------------------------------------------------------------------- |
+| `delegationArgs` | `object` | Tool call arguments from the server (chainId, scope, justification, etc.) |
+| `callId`         | `string` | Tool call ID from the `ask_for_delegation` response                       |
+| `chatId`         | `string` | Chat session ID for conversation continuity                               |
+| `originalPrompt` | `string` | The prompt that triggered the delegation request                          |
+| `createdAt`      | `string` | ISO-8601 timestamp of when the request was received                       |
+| `description`    | `string` | Human-readable summary of the delegation request                          |
+
 ## Command Reference
 
 ### npx @coinfello/agent-cli@latest create_account
@@ -131,9 +165,19 @@ npx @coinfello/agent-cli@latest send_prompt <prompt>
 | --------- | -------- | -------- | ------- | -------------------------------------------- |
 | `prompt`  | `string` | Yes      | —       | Natural language prompt to send to CoinFello |
 
-The server determines whether a delegation is needed and, if so, what scope and chain to use. The client creates and signs the subdelegation based on the server's `ask_for_delegation` client tool call response. Each subdelegation is created with a unique random salt to ensure delegation uniqueness.
+The server determines whether a delegation is needed and, if so, what scope and chain to use. If the server responds with an `ask_for_delegation` tool call, the delegation request is saved to `~/.clawdbot/skills/coinfello/pending_delegation.json` and logged to the terminal. The delegation is **not** signed automatically — run `approve_delegation_request` to approve it.
 
 `send_prompt` reuses `chat_id` from config when available and persists server-returned `chatId` values for continued context across calls.
+
+### npx @coinfello/agent-cli@latest approve_delegation_request
+
+```
+npx @coinfello/agent-cli@latest approve_delegation_request
+```
+
+No parameters. Reads the pending delegation request from `~/.clawdbot/skills/coinfello/pending_delegation.json`, creates and signs a subdelegation, and submits it to CoinFello. Clears the pending delegation file on success.
+
+Each subdelegation is created with a unique random salt to ensure delegation uniqueness.
 
 **ERC-6492 signature wrapping**: If the smart account has not yet been deployed on-chain, the CLI wraps the delegation signature using ERC-6492 (`serializeErc6492Signature`) with the account's factory address and factory data. This allows the delegation to be verified even before the account contract exists.
 
@@ -177,7 +221,7 @@ The `send_prompt` command fetches this list and uses the first agent's `id` as `
 
 ### POST /api/conversation body
 
-Initial request (prompt only):
+Initial request (prompt only, sent by `send_prompt`):
 
 ```json
 {
@@ -189,7 +233,7 @@ Initial request (prompt only):
 
 `agentId` is dynamically resolved from the `/api/v1/automation/coinfello-agents` endpoint (not hardcoded).
 
-The follow-up request (sending the signed delegation back) is handled internally by `send_prompt` — no manual construction is needed.
+The follow-up request (sending the signed delegation back) is handled internally by `approve_delegation_request` — no manual construction is needed.
 
 ### POST /api/conversation response
 
@@ -278,7 +322,7 @@ All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC 
 - **Key generation and storage**: By default, `create_account` generates a hardware-backed P256 key in the **macOS Secure Enclave**. The private key never leaves the hardware and cannot be exported — only public key coordinates and a key tag are saved to `~/.clawdbot/skills/coinfello/config.json`. A plaintext private key is **only** stored when `--use-unsafe-private-key` is explicitly passed (intended for development/testing). Restrict file permissions (e.g. `chmod 600`) and do not share or commit this file.
 - **Signer daemon**: The daemon caches a single authenticated `LAContext` on startup, so all signing operations within the session reuse the same authorization. The Unix domain socket is created with `0600` permissions and scoped to the current OS user. The daemon cleans up socket and PID files on `SIGTERM`/`SIGINT`.
 - **Session token storage**: `sign_in` stores a SIWE session token in the same config file.
-- **Automatic delegation signing**: `send_prompt` may create and sign delegations based on scopes requested by the server, then submit them to the CoinFello API endpoint. Ensure the `COINFELLO_BASE_URL` points to a trusted endpoint before running delegation flows.
+- **Delegation signing**: `send_prompt` saves delegation requests from the server to a local file. `approve_delegation_request` creates and signs the delegation, then submits it to the CoinFello API endpoint. Ensure the `COINFELLO_BASE_URL` points to a trusted endpoint before approving delegation requests.
 
 ## Error Messages
 
@@ -288,5 +332,6 @@ All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC 
 | `Secure Enclave config missing. Run 'create_account' first.`  | Missing Secure Enclave key data       | Run `npx @coinfello/agent-cli@latest create_account` |
 | `No smart account found. Run 'create_account' first.`         | Missing smart account in config       | Run `npx @coinfello/agent-cli@latest create_account` |
 | `No delegation request received from the server.`             | Server returned unexpected response   | Check the full response JSON printed                 |
+| `No pending delegation request found.`                        | No delegation saved by `send_prompt`  | Run `send_prompt` first to generate a request        |
 | `Signing daemon is already running.`                          | Daemon already started                | Use `signer-daemon status` to confirm                |
 | `Signing daemon is not running.`                              | Daemon not started or already stopped | Run `signer-daemon start`                            |
