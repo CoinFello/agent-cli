@@ -13,12 +13,11 @@ import {
   isDaemonRunning,
 } from './secure-enclave/index.js'
 import {
-  savePendingDelegation,
   loadPendingDelegation,
   clearPendingDelegation,
   formatDelegationRequestForDisplay,
   signAndSubmitDelegation,
-  PENDING_DELEGATION_PATH,
+  handleConversationResponse,
 } from './delegation.js'
 import packageJson from '../package.json'
 
@@ -207,50 +206,7 @@ program
         chatId: config.chat_id,
       })
 
-      if (response.chatId && response.chatId !== config.chat_id) {
-        config.chat_id = response.chatId
-        await saveConfig(config)
-      }
-
-      // Read-only response
-      if (!response.clientToolCalls?.length && !response.txn_id) {
-        console.log(response.responseText ?? '')
-        return
-      }
-
-      // Direct transaction (no delegation needed)
-      if (response.txn_id && !response.clientToolCalls?.length) {
-        console.log('Transaction submitted successfully.')
-        console.log(`Transaction ID: ${response.txn_id}`)
-        return
-      }
-
-      // Delegation requested — save for review instead of auto-approving
-      const delegationToolCall = response.clientToolCalls?.find(
-        (tc) => tc.name === 'ask_for_delegation'
-      )
-      if (!delegationToolCall) {
-        console.error('Error: No delegation request received from the server.')
-        console.log('Response:', JSON.stringify(response, null, 2))
-        process.exit(1)
-      }
-
-      /* eslint-disable-next-line */
-      const args = JSON.parse(delegationToolCall.arguments) as any
-      const pending = {
-        delegationArgs: args,
-        callId: delegationToolCall.callId,
-        chatId: response.chatId ?? config.chat_id ?? '',
-        originalPrompt: prompt,
-        createdAt: new Date().toISOString(),
-        description: `Delegation for scope=${args.scope?.type}, chainId=${args.chainId}`,
-      }
-
-      await savePendingDelegation(pending)
-
-      console.log(formatDelegationRequestForDisplay(pending))
-      console.log(`Delegation request saved to: ${PENDING_DELEGATION_PATH}`)
-      console.log("Run 'approve_delegation_request' to sign and submit this delegation.")
+      await handleConversationResponse(response, config, prompt)
     } catch (err) {
       console.error(`Failed to send prompt: ${(err as Error).message}`)
       process.exit(1)
@@ -286,17 +242,7 @@ program
 
       await clearPendingDelegation()
 
-      if (finalResponse.chatId && finalResponse.chatId !== config.chat_id) {
-        config.chat_id = finalResponse.chatId
-        await saveConfig(config)
-      }
-
-      if (finalResponse.txn_id) {
-        console.log('Transaction submitted successfully.')
-        console.log(`Transaction ID: ${finalResponse.txn_id}`)
-      } else {
-        console.log('Final Response:', JSON.stringify(finalResponse, null, 2))
-      }
+      await handleConversationResponse(finalResponse, config, pending.originalPrompt)
     } catch (err) {
       console.error(`Failed to approve delegation: ${(err as Error).message}`)
       process.exit(1)

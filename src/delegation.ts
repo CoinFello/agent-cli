@@ -9,7 +9,7 @@ import {
   type HybridSmartAccount,
 } from './account.js'
 import { getCoinFelloAddress, sendConversation, type ConversationResponse } from './api.js'
-import { CONFIG_DIR, type Config } from './config.js'
+import { CONFIG_DIR, type Config, saveConfig } from './config.js'
 import { parseScope } from './scope.js'
 import type { RawScope } from './scope.js'
 import { SignedSubdelegation } from './types.js'
@@ -89,7 +89,7 @@ export function formatDelegationRequestForDisplay(request: PendingDelegationRequ
   if (scope.valueLte?.maxValue) lines.push(`Value <= ${scope.valueLte.maxValue}`)
 
   lines.push(`Original prompt: "${originalPrompt}"`)
-  if (justification){
+  if (justification) {
     lines.push(`Justification: "${justification}"`)
   }
   lines.push(`Requested at: ${createdAt}`)
@@ -98,6 +98,66 @@ export function formatDelegationRequestForDisplay(request: PendingDelegationRequ
   lines.push('==========================')
 
   return lines.join('\n')
+}
+
+// ── Shared response handling ───────────────────────────────────
+
+/**
+ * Handles a ConversationResponse uniformly — used by both send_prompt
+ * and approve_delegation_request so that chained delegation requests
+ * are handled identically.
+ *
+ * Returns true if the response was fully handled, false otherwise.
+ */
+export async function handleConversationResponse(
+  response: ConversationResponse,
+  config: Config,
+  originalPrompt: string
+): Promise<void> {
+  if (response.chatId && response.chatId !== config.chat_id) {
+    config.chat_id = response.chatId
+    await saveConfig(config)
+  }
+
+  // Read-only response
+  if (!response.clientToolCalls?.length && !response.txn_id) {
+    console.log(response.responseText ?? '')
+    return
+  }
+
+  // Direct transaction (no delegation needed)
+  if (response.txn_id && !response.clientToolCalls?.length) {
+    console.log('Transaction submitted successfully.')
+    console.log(`Transaction ID: ${response.txn_id}`)
+    return
+  }
+
+  // Delegation requested — save for review instead of auto-approving
+  const delegationToolCall = response.clientToolCalls?.find(
+    (tc) => tc.name === 'ask_for_delegation'
+  )
+  if (!delegationToolCall) {
+    console.error('Error: No delegation request received from the server.')
+    console.log('Response:', JSON.stringify(response, null, 2))
+    process.exit(1)
+  }
+
+  /* eslint-disable-next-line */
+  const args = JSON.parse(delegationToolCall.arguments) as any
+  const pending = {
+    delegationArgs: args,
+    callId: delegationToolCall.callId,
+    chatId: response.chatId ?? config.chat_id ?? '',
+    originalPrompt,
+    createdAt: new Date().toISOString(),
+    description: `Delegation for scope=${args.scope?.type}, chainId=${args.chainId}`,
+  }
+
+  await savePendingDelegation(pending)
+
+  console.log(formatDelegationRequestForDisplay(pending))
+  console.log(`Delegation request saved to: ${PENDING_DELEGATION_PATH}`)
+  console.log("Run 'approve_delegation_request' to sign and submit this delegation.")
 }
 
 // ── Shared signing & submission ────────────────────────────────

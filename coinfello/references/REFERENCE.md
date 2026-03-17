@@ -75,14 +75,14 @@ Created by `send_prompt` when the server requests a delegation. Read and cleared
 }
 ```
 
-| Field            | Type     | Description                                                |
-| ---------------- | -------- | ---------------------------------------------------------- |
+| Field            | Type     | Description                                                               |
+| ---------------- | -------- | ------------------------------------------------------------------------- |
 | `delegationArgs` | `object` | Tool call arguments from the server (chainId, scope, justification, etc.) |
-| `callId`         | `string` | Tool call ID from the `ask_for_delegation` response        |
-| `chatId`         | `string` | Chat session ID for conversation continuity                |
-| `originalPrompt` | `string` | The prompt that triggered the delegation request           |
-| `createdAt`      | `string` | ISO-8601 timestamp of when the request was received        |
-| `description`    | `string` | Human-readable summary of the delegation request           |
+| `callId`         | `string` | Tool call ID from the `ask_for_delegation` response                       |
+| `chatId`         | `string` | Chat session ID for conversation continuity                               |
+| `originalPrompt` | `string` | The prompt that triggered the delegation request                          |
+| `createdAt`      | `string` | ISO-8601 timestamp of when the request was received                       |
+| `description`    | `string` | Human-readable summary of the delegation request                          |
 
 ## Command Reference
 
