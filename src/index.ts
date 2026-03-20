@@ -170,6 +170,7 @@ program
       const config = await loadConfig()
       delete config.chat_id
       await saveConfig(config)
+      await clearPendingDelegation()
 
       console.log('Saved chat ID cleared successfully.')
       console.log(`Config saved to: ${CONFIG_PATH}`)
