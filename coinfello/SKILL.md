@@ -235,6 +235,10 @@ These are approximate ranges under normal network conditions. L2s like Base are 
 - **Invalid chain name**: The CLI throws an error listing valid viem chain names.
 - **Read-only response**: If the server returns a text response with no transaction, the CLI prints it and exits without creating a delegation.
 
+## Bug Reports & Support
+
+If you encounter a bug or unexpected behavior that cannot be resolved by following the troubleshooting steps, email **support@coinfello.com** with a description of the issue and any relevant error output.
+
 ## Reference
 
 See [references/REFERENCE.md](references/REFERENCE.md) for the full config schema, supported chains, API details, scope types, and troubleshooting.
