@@ -242,5 +242,3 @@ If you encounter a bug or unexpected behavior that cannot be resolved by followi
 ## Reference
 
 See [references/REFERENCE.md](references/REFERENCE.md) for the full config schema, supported chains, API details, scope types, and troubleshooting.
-
----
