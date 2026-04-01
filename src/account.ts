@@ -38,10 +38,52 @@ export function resolveChainById(chainId: number): Chain {
 }
 
 export function resolveChainInput(chainInput: string | number): Chain {
-  if (typeof chainInput === 'number') {
-    return resolveChainById(chainInput)
+  const chain =
+    typeof chainInput === 'number' ? resolveChainById(chainInput) : resolveChain(chainInput)
+
+  assertChainSupported(chain)
+
+  return chain
+}
+
+/**
+ * Chains where both the MetaMask delegation framework contracts are deployed
+ * AND CoinFello infrastructure (RPC, backend) is configured. Using a chain
+ * outside this set would result in permanently locked funds.
+ */
+const SUPPORTED_CHAINS_MAP: Record<number, string> = {
+  1: 'Ethereum',
+  10: 'OP Mainnet',
+  56: 'BNB Smart Chain',
+  137: 'Polygon',
+  8453: 'Base',
+  42161: 'Arbitrum One',
+  59144: 'Linea',
+  11155111: 'Sepolia (testnet)',
+  84532: 'Base Sepolia (testnet)',
+}
+
+const SUPPORTED_CHAIN_IDS = new Set(Object.keys(SUPPORTED_CHAINS_MAP).map(Number))
+
+export function getSupportedChainNames(): string[] {
+  return Object.values(SUPPORTED_CHAINS_MAP)
+}
+
+export function printSupportedChainsWarning(): void {
+  console.warn(
+    `⚠️  Only fund this address on supported networks: ${getSupportedChainNames().join(', ')}.`
+  )
+  console.warn('   Funds sent on unsupported networks cannot be recovered.')
+}
+
+function assertChainSupported(chain: Chain): void {
+  if (!SUPPORTED_CHAIN_IDS.has(chain.id)) {
+    throw new Error(
+      `Chain "${chain.name}" (ID: ${chain.id}) is not supported by CoinFello. ` +
+        `Sending funds to a smart account on an unsupported chain will result in locked funds. ` +
+        `Supported chains: ${getSupportedChainNames().join(', ')}.`
+    )
   }
-  return resolveChain(chainInput)
 }
 
 export async function createSmartAccount(

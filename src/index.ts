@@ -1,5 +1,9 @@
 import { Command } from 'commander'
-import { createSmartAccount, createSmartAccountWithSecureEnclave } from './account.js'
+import {
+  createSmartAccount,
+  createSmartAccountWithSecureEnclave,
+  printSupportedChainsWarning,
+} from './account.js'
 import { loadConfig, saveConfig, CONFIG_PATH } from './config.js'
 import { sendConversation, BASE_URL_V1, BASE_URL } from './api.js'
 import { loadSessionToken } from './cookies.js'
@@ -92,6 +96,8 @@ program
         console.log(`Address: ${address}`)
         console.log(`Config saved to: ${CONFIG_PATH}`)
       }
+
+      printSupportedChainsWarning()
     } catch (err) {
       console.error(`Failed to create account: ${(err as Error).message}`)
       process.exit(1)
@@ -111,6 +117,7 @@ program
       }
 
       console.log(config.smart_account_address)
+      printSupportedChainsWarning()
     } catch (err) {
       console.error(`Failed to get account: ${(err as Error).message}`)
       process.exit(1)
