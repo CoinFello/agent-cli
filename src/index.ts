@@ -77,7 +77,6 @@ program
         console.log(`Address: ${address}`)
         console.log(`Key tag: ${keyTag}`)
         console.log(`Config saved to: ${CONFIG_PATH}`)
-        printSupportedChainsWarning()
       } else {
         if (!opts.useUnsafePrivateKey) {
           console.warn(
@@ -96,8 +95,9 @@ program
         console.log('Smart account created successfully.')
         console.log(`Address: ${address}`)
         console.log(`Config saved to: ${CONFIG_PATH}`)
-        printSupportedChainsWarning()
       }
+
+      printSupportedChainsWarning()
     } catch (err) {
       console.error(`Failed to create account: ${(err as Error).message}`)
       process.exit(1)
