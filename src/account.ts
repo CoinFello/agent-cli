@@ -69,6 +69,14 @@ export function getSupportedChainNames(): string[] {
   return Object.values(SUPPORTED_CHAINS_MAP)
 }
 
+export function printSupportedChainsWarning(): void {
+  console.log('')
+  console.warn(
+    `⚠️  Only fund this address on supported networks: ${getSupportedChainNames().join(', ')}.`
+  )
+  console.warn('   Funds sent on unsupported networks cannot be recovered.')
+}
+
 function assertChainSupported(chain: Chain): void {
   if (!SUPPORTED_CHAIN_IDS.has(chain.id)) {
     throw new Error(
