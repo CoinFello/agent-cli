@@ -38,9 +38,8 @@ export function resolveChainById(chainId: number): Chain {
 }
 
 export function resolveChainInput(chainInput: string | number): Chain {
-  const chain = typeof chainInput === 'number'
-    ? resolveChainById(chainInput)
-    : resolveChain(chainInput)
+  const chain =
+    typeof chainInput === 'number' ? resolveChainById(chainInput) : resolveChain(chainInput)
 
   assertChainSupported(chain)
 
@@ -53,15 +52,15 @@ export function resolveChainInput(chainInput: string | number): Chain {
  * outside this set would result in permanently locked funds.
  */
 const SUPPORTED_CHAINS_MAP: Record<number, string> = {
-  1:        'Ethereum',
-  10:       'OP Mainnet',
-  56:       'BNB Smart Chain',
-  137:      'Polygon',
-  8453:     'Base',
-  42161:    'Arbitrum One',
-  59144:    'Linea',
+  1: 'Ethereum',
+  10: 'OP Mainnet',
+  56: 'BNB Smart Chain',
+  137: 'Polygon',
+  8453: 'Base',
+  42161: 'Arbitrum One',
+  59144: 'Linea',
   11155111: 'Sepolia (testnet)',
-  84532:    'Base Sepolia (testnet)',
+  84532: 'Base Sepolia (testnet)',
 }
 
 const SUPPORTED_CHAIN_IDS = new Set(Object.keys(SUPPORTED_CHAINS_MAP).map(Number))
@@ -74,8 +73,8 @@ function assertChainSupported(chain: Chain): void {
   if (!SUPPORTED_CHAIN_IDS.has(chain.id)) {
     throw new Error(
       `Chain "${chain.name}" (ID: ${chain.id}) is not supported by CoinFello. ` +
-      `Sending funds to a smart account on an unsupported chain will result in locked funds. ` +
-      `Supported chains: ${getSupportedChainNames().join(', ')}.`
+        `Sending funds to a smart account on an unsupported chain will result in locked funds. ` +
+        `Supported chains: ${getSupportedChainNames().join(', ')}.`
     )
   }
 }
