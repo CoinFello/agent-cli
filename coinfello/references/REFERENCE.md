@@ -183,20 +183,21 @@ Each subdelegation is created with a unique random salt to ensure delegation uni
 
 ## Supported Chains
 
-Any chain exported by `viem/chains` is supported. Chains with a QuickNode slug configured get routed through the paid QuickNode RPC when `RPC_BASE_URL` and `RPC_API_KEY` are set; all others fall back to the chain's default public RPC.
+> **⚠️ Only the chains listed below are supported. Sending funds to your smart account on any other chain will result in permanently locked funds.** The MetaMask delegation framework contracts must be deployed on a chain AND CoinFello infrastructure must be configured for it. The CLI enforces this restriction and will reject transactions on unsupported chains.
 
-| Chain Name    | Chain ID | Network                  | QuickNode Support |
-| ------------- | -------- | ------------------------ | ----------------- |
-| `mainnet`     | 1        | Ethereum mainnet         | Yes               |
-| `sepolia`     | 11155111 | Ethereum Sepolia testnet | Yes               |
-| `polygon`     | 137      | Polygon PoS              | Yes               |
-| `arbitrum`    | 42161    | Arbitrum One             | Yes               |
-| `optimism`    | 10       | OP Mainnet               | Yes               |
-| `base`        | 8453     | Base                     | Yes               |
-| `baseSepolia` | 84532    | Base Sepolia testnet     | Yes               |
-| `linea`       | 59144    | Linea mainnet            | Yes               |
-| `bsc`         | 56       | BNB Smart Chain          | Yes               |
-| `avalanche`   | 43114    | Avalanche C-Chain        | No (public RPC)   |
+| Chain Name    | Chain ID | Network                  |
+| ------------- | -------- | ------------------------ |
+| `mainnet`     | 1        | Ethereum mainnet         |
+| `optimism`    | 10       | OP Mainnet               |
+| `bsc`         | 56       | BNB Smart Chain          |
+| `polygon`     | 137      | Polygon PoS              |
+| `base`        | 8453     | Base                     |
+| `arbitrum`    | 42161    | Arbitrum One             |
+| `linea`       | 59144    | Linea mainnet            |
+| `sepolia`     | 11155111 | Ethereum Sepolia testnet |
+| `baseSepolia` | 84532    | Base Sepolia testnet     |
+
+When `RPC_BASE_URL` and `RPC_API_KEY` are set, RPC requests for these chains are routed through QuickNode. Otherwise, the chain's default public RPC is used.
 
 ## API Endpoints
 
@@ -335,3 +336,4 @@ All `amount` fields are in the token's smallest unit (e.g. `5000000` for 5 USDC 
 | `No pending delegation request found.`                        | No delegation saved by `send_prompt`  | Run `send_prompt` first to generate a request        |
 | `Signing daemon is already running.`                          | Daemon already started                | Use `signer-daemon status` to confirm                |
 | `Signing daemon is not running.`                              | Daemon not started or already stopped | Run `signer-daemon start`                            |
+| `Chain "X" (ID: N) is not supported by CoinFello.`            | Unsupported chain in delegation       | Use a supported chain (see Supported Chains above)   |
