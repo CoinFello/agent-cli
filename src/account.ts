@@ -70,7 +70,6 @@ export function getSupportedChainNames(): string[] {
 }
 
 export function printSupportedChainsWarning(): void {
-  console.log('')
   console.warn(
     `⚠️  Only fund this address on supported networks: ${getSupportedChainNames().join(', ')}.`
   )
