@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { createSmartAccount, createSmartAccountWithSecureEnclave } from './account.js'
+import { createSmartAccount, createSmartAccountWithSecureEnclave, getSupportedChainNames } from './account.js'
 import { loadConfig, saveConfig, CONFIG_PATH } from './config.js'
 import { sendConversation, BASE_URL_V1, BASE_URL } from './api.js'
 import { loadSessionToken } from './cookies.js'
@@ -73,6 +73,9 @@ program
         console.log(`Address: ${address}`)
         console.log(`Key tag: ${keyTag}`)
         console.log(`Config saved to: ${CONFIG_PATH}`)
+        console.log('')
+        console.warn(`⚠️  Only fund this address on supported networks: ${getSupportedChainNames().join(', ')}.`)
+        console.warn('   Funds sent on unsupported networks cannot be recovered.')
       } else {
         if (!opts.useUnsafePrivateKey) {
           console.warn(
@@ -91,6 +94,9 @@ program
         console.log('Smart account created successfully.')
         console.log(`Address: ${address}`)
         console.log(`Config saved to: ${CONFIG_PATH}`)
+        console.log('')
+        console.warn(`⚠️  Only fund this address on supported networks: ${getSupportedChainNames().join(', ')}.`)
+        console.warn('   Funds sent on unsupported networks cannot be recovered.')
       }
     } catch (err) {
       console.error(`Failed to create account: ${(err as Error).message}`)
@@ -111,6 +117,9 @@ program
       }
 
       console.log(config.smart_account_address)
+      console.log('')
+      console.warn(`⚠️  Only fund this address on supported networks: ${getSupportedChainNames().join(', ')}.`)
+      console.warn('   Funds sent on unsupported networks cannot be recovered.')
     } catch (err) {
       console.error(`Failed to get account: ${(err as Error).message}`)
       process.exit(1)
