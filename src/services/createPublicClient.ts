@@ -34,7 +34,10 @@ export function getChainTransport(chainId: number): Transport {
 }
 
 export function createPublicClient(chain: Chain) {
-  const transport = getBaseUrl() && getApiKey() ? getChainTransport(chain.id) : http()
+  const transport =
+    process.env.RPC_URL_OVERRIDE || (getBaseUrl() && getApiKey())
+      ? getChainTransport(chain.id)
+      : http()
 
   return viemCreatePublicClient({ chain, transport })
 }
