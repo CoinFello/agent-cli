@@ -17,27 +17,24 @@ const QUICKNODE_SLUGS: Record<number, string> = {
 }
 
 /**
- * Returns an `http()` transport using the paid QuickNode RPC for the given chain.
- * Falls back to the default public RPC if the chain has no QuickNode endpoint configured.
+ * Returns the best available RPC transport for the given chain.
+ * Priority: RPC_URL_OVERRIDE > QuickNode > default public RPC.
  */
 export function getChainTransport(chainId: number): Transport {
-  // Local development/testing: route all RPC calls through local anvil
   if (process.env.RPC_URL_OVERRIDE) {
     return http(process.env.RPC_URL_OVERRIDE)
   }
-  const slug = QUICKNODE_SLUGS[chainId]
-  if (slug === undefined) {
-    return http()
+
+  if (getBaseUrl() && getApiKey()) {
+    const slug = QUICKNODE_SLUGS[chainId]
+    if (slug !== undefined) {
+      return http(`${getBaseUrl()}${slug}.quiknode.pro/${getApiKey()}`)
+    }
   }
-  const rpcUrl = `${getBaseUrl()}${slug}.quiknode.pro/${getApiKey()}`
-  return http(rpcUrl)
+
+  return http()
 }
 
 export function createPublicClient(chain: Chain) {
-  const transport =
-    process.env.RPC_URL_OVERRIDE || (getBaseUrl() && getApiKey())
-      ? getChainTransport(chain.id)
-      : http()
-
-  return viemCreatePublicClient({ chain, transport })
+  return viemCreatePublicClient({ chain, transport: getChainTransport(chain.id) })
 }
