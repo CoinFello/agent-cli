@@ -12,6 +12,7 @@ const QUICKNODE_SLUGS: Record<number, string> = {
   8453: '.base-mainnet',
   84532: '.base-sepolia',
   10: '.optimism',
+  5000: '.mantle-mainnet',
   42161: '.arbitrum-mainnet',
   11155111: '.ethereum-sepolia',
 }
