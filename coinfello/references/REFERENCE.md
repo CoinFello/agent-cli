@@ -191,6 +191,7 @@ Each subdelegation is created with a unique random salt to ensure delegation uni
 | `optimism`    | 10       | OP Mainnet               |
 | `bsc`         | 56       | BNB Smart Chain          |
 | `polygon`     | 137      | Polygon PoS              |
+| `mantle`      | 5000     | Mantle mainnet           |
 | `base`        | 8453     | Base                     |
 | `arbitrum`    | 42161    | Arbitrum One             |
 | `linea`       | 59144    | Linea mainnet            |
