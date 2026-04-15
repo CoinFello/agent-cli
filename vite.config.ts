@@ -29,5 +29,9 @@ export default defineConfig({
   },
   test: {
     testTimeout: 360_000,
+    fileParallelism: false,
+    sequence: {
+      concurrent: false,
+    },
   },
 });

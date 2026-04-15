@@ -15,6 +15,7 @@ describe("send_prompt read-only flow", () => {
   beforeAll(async () => {
     const privateKey = generatePrivateKey();
     const { address } = await createSmartAccount(privateKey, CHAIN);
+    console.log('send prompt smart acct address: ', address)
 
     const config = {
       private_key: privateKey as Hex,

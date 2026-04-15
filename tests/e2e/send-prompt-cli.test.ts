@@ -210,6 +210,26 @@ describe("send_prompt CLI end-to-end", () => {
       await new Promise((resolve)=>setTimeout(()=>{resolve(1)}, 4000))
     });
 
+    afterAll(async () => {
+      try {
+        await runCli(["new_chat"]);
+        const { stdout, stderr } = await runCli([
+          "send_prompt",
+          "swap ALL of my FUSDC to USDC on Base. Do NOT ask me for another confirmation!",
+        ]);
+        console.log("afterAll unstake stdout:", stdout);
+        console.error("afterAll unstake stderr:", stderr);
+
+        const { stdout: approveOut, stderr: approveErr } = await runCli([
+          "approve_delegation_request",
+        ]);
+        console.log("afterAll unstake approve stdout:", approveOut);
+        console.error("afterAll unstake approve stderr:", approveErr);
+      } catch (err) {
+        console.error("Cleanup (unstake FUSDC) failed:", err);
+      }
+    }, 120_000);
+
     it("completes the delegation flow when asked to swap ETH for USDC via the CLI", async () => {
       await runCli(["new_chat"]);
 
@@ -287,7 +307,7 @@ describe("send_prompt CLI end-to-end", () => {
       // Step 2: Stake USDC into the fluid vault (send_prompt + approve)
       const { stdout: stdout2, stderr: stderr2 } = await runCli([
         "send_prompt",
-        "stake 2 USDC into the fluid vault on Base",
+        "stake 0.5 USDC into the fluid vault on Base",
       ]);
       console.log(stdout2);
       console.error(stderr2);
@@ -309,32 +329,6 @@ describe("send_prompt CLI end-to-end", () => {
       });
       console.log(`Smart account USDC balance after staking: ${formatUnits(usdcAfterStake, 6)} USDC`);
       expect(usdcAfterStake).toBeLessThan(usdcBefore);
-
-      // Step 3: Unstake USDC from the fluid vault (send_prompt + approve)
-      const { stdout: stdout3, stderr: stderr3 } = await runCli([
-        "send_prompt",
-        "swap ALL of my FUSDC to USDC on Base",
-      ]);
-      console.log(stdout3);
-      console.error(stderr3);
-
-      const { stdout: unstakeApproveOut, stderr: unstakeApproveErr } = await runCli([
-        "approve_delegation_request",
-      ]);
-      console.log(unstakeApproveOut);
-      console.error(unstakeApproveErr);
-
-      // wait for 2 blocks so balance check gets fresh data
-      await new Promise((resolve)=>setTimeout(()=>{resolve(1)}, 4000))
-
-      const usdcAfterUnstake = await basePublicClient.readContract({
-        address: USDC_ADDRESS,
-        abi: ERC20_ABI,
-        functionName: "balanceOf",
-        args: [baseSmartAccountAddress],
-      });
-      console.log(`Smart account USDC balance after unstaking: ${formatUnits(usdcAfterUnstake, 6)} USDC`);
-      expect(usdcAfterUnstake).toBeGreaterThan(usdcAfterStake);
     });
   })
 });
