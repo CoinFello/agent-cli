@@ -57,6 +57,7 @@ const SUPPORTED_CHAINS_MAP: Record<number, string> = {
   56: 'BNB Smart Chain',
   137: 'Polygon',
   8453: 'Base',
+  5000: 'Mantle',
   42161: 'Arbitrum One',
   59144: 'Linea',
   11155111: 'Sepolia (testnet)',
