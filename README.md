@@ -19,7 +19,7 @@ The CLI uses [QuickNode](https://www.quicknode.com/) as its RPC provider. Config
 
 If `RPC_BASE_URL` and `RPC_API_KEY` are both set, the CLI routes requests through QuickNode for supported chains. If either is missing, it falls back to the chain's default public RPC.
 
-**Supported chains:** Ethereum (1), Polygon (137), BSC (56), Linea (59144), Base (8453), Base Sepolia (84532), Optimism (10), Arbitrum (42161), Ethereum Sepolia (11155111). Unsupported chains fall back to the default public RPC.
+**Supported chains:** Ethereum (1), Optimism (10), BSC (56), Polygon (137), Mantle (5000), Base (8453), Arbitrum (42161), Linea (59144), Sepolia (11155111), Base Sepolia (84532). Unsupported chains fall back to the default public RPC.
 
 **Local development:** Set `RPC_URL_OVERRIDE` (e.g. `http://127.0.0.1:8545`) to route all RPC calls through a custom URL, regardless of chain.
 

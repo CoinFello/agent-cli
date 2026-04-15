@@ -43,7 +43,7 @@ The CLI is available via `npx @coinfello/agent-cli@latest`. No manual build step
 | `RPC_API_KEY`        | No       | —                            | QuickNode API key                                                                  |
 | `RPC_URL_OVERRIDE`   | No       | —                            | Custom RPC URL override for development/testing (overrides all other RPC settings) |
 
-If both `RPC_BASE_URL` and `RPC_API_KEY` are set, the CLI routes RPC requests through QuickNode for supported chains (Ethereum, Polygon, BSC, Linea, Base, Base Sepolia, Optimism, Arbitrum, Ethereum Sepolia). If either is missing or the chain is not supported, it falls back to the chain's default public RPC.
+If both `RPC_BASE_URL` and `RPC_API_KEY` are set, the CLI routes RPC requests through QuickNode for supported chains (Ethereum, Optimism, BSC, Polygon, Mantle, Base, Arbitrum, Linea, Sepolia, Base Sepolia). If either is missing or the chain is not supported, it falls back to the chain's default public RPC.
 
 Set `RPC_URL_OVERRIDE` (e.g. `http://127.0.0.1:8545`) to route all RPC calls through a custom URL, regardless of chain or other RPC settings.
 
@@ -233,7 +233,7 @@ These are approximate ranges under normal network conditions. L2s like Base are 
 - **No smart account**: Run `create_account` before `send_prompt`. The CLI checks for a saved private key and address in config.
 - **Not signed in**: Run `sign_in` before `send_prompt` if the server requires authentication.
 - **Invalid chain name**: The CLI throws an error listing valid viem chain names.
-- **Unsupported chain**: The CLI rejects chains where CoinFello infrastructure and MetaMask delegation contracts aren't available. Supported chains: Ethereum, OP Mainnet, BNB Smart Chain, Polygon, Base, Arbitrum One, Linea, Sepolia, Base Sepolia. **Funding a smart account on any other chain will result in permanently locked funds.**
+- **Unsupported chain**: The CLI rejects chains where CoinFello infrastructure and MetaMask delegation contracts aren't available. Supported chains: Ethereum, OP Mainnet, BNB Smart Chain, Polygon, Mantle, Base, Arbitrum One, Linea, Sepolia, Base Sepolia. **Funding a smart account on any other chain will result in permanently locked funds.**
 - **Read-only response**: If the server returns a text response with no transaction, the CLI prints it and exits without creating a delegation.
 
 ## Bug Reports & Support
