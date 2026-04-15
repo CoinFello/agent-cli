@@ -215,7 +215,7 @@ describe("send_prompt CLI end-to-end", () => {
         await runCli(["new_chat"]);
         const { stdout, stderr } = await runCli([
           "send_prompt",
-          "swap ALL of my FUSDC to USDC on Base",
+          "swap ALL of my FUSDC to USDC on Base. Do NOT ask me for another confirmation!",
         ]);
         console.log("afterAll unstake stdout:", stdout);
         console.error("afterAll unstake stderr:", stderr);
@@ -307,7 +307,7 @@ describe("send_prompt CLI end-to-end", () => {
       // Step 2: Stake USDC into the fluid vault (send_prompt + approve)
       const { stdout: stdout2, stderr: stderr2 } = await runCli([
         "send_prompt",
-        "stake 2 USDC into the fluid vault on Base",
+        "stake 0.5 USDC into the fluid vault on Base",
       ]);
       console.log(stdout2);
       console.error(stderr2);
